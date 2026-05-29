@@ -1,0 +1,1 @@
+Servicios de administrador. La lógica actual sigue en `src/common/app.js` y `src/firestore/global-sync.js` para conservar funciones globales.

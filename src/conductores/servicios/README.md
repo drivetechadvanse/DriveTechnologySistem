@@ -1,0 +1,1 @@
+Servicios de conductor. La lógica actual sigue en `src/common/app.js` para conservar todas las funciones globales existentes.

@@ -1,0 +1,315 @@
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; overflow: hidden; background-color: #000; height: 100dvh; }
+        #app-container { height: 100dvh; }
+        #sidebar { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); transform: translateX(-100%); }
+        #sidebar.open { transform: translateX(0); }
+        #cost-sheet { transition: transform 0.5s cubic-bezier(0.32, 0.72, 0, 1); transform: translateY(100%); padding-bottom: env(safe-area-inset-bottom, 2rem); }
+        #cost-sheet.active { transform: translateY(0); }
+        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-out; }
+        .accordion-content.expanded { max-height: 500px; }
+        .map-sim { background-color: #f3f4f6; background-image: radial-gradient(#d1d5db 1px, transparent 1px); background-size: 25px 25px; flex-grow: 1; }
+        .radar-pulse { position: absolute; width: 100px; height: 100px; background: rgba(239, 68, 68, 0.15); border-radius: 100%; animation: radar 2s infinite; }
+        @keyframes radar { 0% { transform: scale(0.3); opacity: 1; } 100% { transform: scale(2.5); opacity: 0; } }
+        .hidden-view { opacity: 0; transform: translateY(-20px); pointer-events: none; transition: all 0.4s ease; }
+        @keyframes bounce-custom { 0%, 100% { transform: translateY(0) scaleY(1); } 40% { transform: translateY(-30px) scaleY(1.1); } 90% { transform: translateY(0) scaleY(0.9); } }
+        .animate-bounce-custom { animation: bounce-custom 0.8s infinite; }
+        .reg-input { width: 100%; padding: 1rem; background-color: #f9fafb; border-radius: 0.75rem; border: 2px solid transparent; outline: none; font-size: 0.75rem; font-weight: 700; }
+        .reg-input:focus { border-color: #ef4444; background-color: #fff; }
+        .reg-label { font-size: 9px; font-weight: 900; color: #9ca3af; text-transform: uppercase; margin-bottom: 0.4rem; display: block; margin-left: 0.5rem; }
+        .payment-opt.selected { border-color: #ef4444; background-color: #fef2f2; color: #ef4444; }
+        .card-selected { border-color: #ef4444 !important; background-color: #fef2f2 !important; ring: 2px; ring-color: #ef4444; }
+        
+        /* Animación para pulso de búsqueda de viajes */
+        .ping-slow { animation: ping 3s cubic-bezier(0, 0, 0.2, 1) infinite; }
+        .trip-route-line { position: absolute; width: 170px; height: 4px; background: #ef4444; left: 34%; top: 44%; transform: rotate(-24deg); border-radius: 999px; box-shadow: 0 0 0 4px rgba(239,68,68,0.08); }
+        .trip-route-line::before, .trip-route-line::after { content: ''; position: absolute; width: 10px; height: 10px; border-radius: 999px; background: #ef4444; top: -3px; }
+        .trip-route-line::before { left: -2px; }
+        .trip-route-line::after { right: -2px; background: #111827; }
+
+
+        /* Bottom sheet de viaje activo pasajero */
+        #active-trip-passenger { background: transparent; pointer-events: none; }
+        #active-trip-passenger.google-active .active-trip-map-fallback { display: none; }
+        #active-trip-sheet, #fixed-cancel-trip-btn, #passenger-message-modal { pointer-events: auto; }
+        #active-trip-sheet {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 55;
+            background: #fff;
+            border-radius: 2.2rem 2.2rem 0 0;
+            box-shadow: 0 -18px 50px rgba(0,0,0,.20);
+            padding: 1rem 1.25rem calc(env(safe-area-inset-bottom, 1rem) + 1rem);
+            transform: translateY(0);
+            transition: transform .38s cubic-bezier(.22,1,.36,1);
+            touch-action: none;
+            will-change: transform;
+        }
+        #active-trip-sheet.minimized { transform: translateY(calc(100% - 122px)); }
+        #active-trip-sheet.dragging { transition: none; }
+        #active-trip-handle { width: 48px; height: 6px; border-radius: 999px; background: #e5e7eb; margin: 0 auto .9rem; }
+        #fixed-cancel-trip-btn {
+            position: absolute;
+            left: 1rem;
+            right: 1rem;
+            bottom: calc(env(safe-area-inset-bottom, 1rem) + .85rem);
+            z-index: 70;
+        }
+        #active-trip-sheet:not(.minimized) ~ #fixed-cancel-trip-btn { bottom: calc(env(safe-area-inset-bottom, 1rem) + .85rem); }
+        .driver-avatar-wrap { position: relative; width: 70px; height: 70px; flex: 0 0 auto; }
+        .driver-avatar-wrap img, .driver-avatar-fallback { width: 70px; height: 70px; border-radius: 1.4rem; object-fit: cover; }
+        .driver-rating-badge { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: #111827; color: #facc15; border: 3px solid #fff; border-radius: 999px; padding: 3px 8px; font-size: 9px; font-weight: 900; font-style: italic; white-space: nowrap; box-shadow: 0 8px 18px rgba(0,0,0,.18); }
+
+        .trip-action-buttons { display: flex; align-items: center; gap: .5rem; flex: 0 0 auto; }
+        .trip-action-btn { width: 40px; height: 40px; border-radius: 1rem; display: inline-flex; align-items: center; justify-content: center; font-weight: 900; box-shadow: 0 10px 22px rgba(0,0,0,.12); transition: transform .18s ease, opacity .18s ease; }
+        .trip-action-btn:active { transform: scale(.94); }
+        #passenger-message-modal { position: absolute; inset: 0; z-index: 90; background: rgba(0,0,0,.42); display: flex; align-items: flex-end; padding: 1rem; }
+        #passenger-message-modal.hidden { display: none; }
+        .passenger-message-card { width: 100%; background: #fff; border-radius: 2rem; padding: 1rem; box-shadow: 0 -18px 50px rgba(0,0,0,.25); }
+        .sheet-spacer-fixed-cancel { height: 68px; }
+
+
+        /* Barra de iconos del panel administrador */
+        .admin-icon-toolbar {
+            background: #f9fafb;
+            border-bottom: 1px solid #e5e7eb;
+            box-shadow: 0 8px 18px rgba(0,0,0,.04);
+        }
+        .admin-icon-action {
+            min-width: 36px;
+            height: 36px;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+        .admin-icon-action span {
+            max-width: 0;
+            opacity: 0;
+            transform: translateX(-6px);
+            transition: max-width .28s ease, opacity .22s ease, transform .28s ease, margin-left .28s ease;
+            margin-left: 0;
+        }
+        .admin-icon-action:hover span {
+            max-width: 140px;
+            opacity: 1;
+            transform: translateX(0);
+            margin-left: .35rem;
+        }
+
+
+    
+
+        /* EXPANSIÓN SOLO PANEL ADMIN EN ESCRITORIO */
+        @media (min-width: 1024px) {
+            #app-container {
+                max-width: 100% !important;
+                width: 100vw !important;
+                height: 100vh !important;
+                margin: 0 !important;
+                border-radius: 0 !important;
+            }
+
+            #admin-view {
+                width: 100vw !important;
+                height: 100vh !important;
+            }
+
+            #admin-content {
+                width: 100% !important;
+                max-width: 100% !important;
+                padding-left: 1rem !important;
+                padding-right: 1rem !important;
+            }
+
+            #admin-dashboard,
+            #urban-trips-section,
+            #admin-wallet-section {
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+
+            #urban-services-admin-module {
+                grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+            }
+
+            #admin-requests-container {
+                width: 100% !important;
+            }
+        }
+
+
+        /* Mapa real Google Maps panel pasajero */
+        #passenger-map {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            width: 100%;
+            height: 100%;
+            background: #f3f4f6;
+        }
+        .passenger-map-layer {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+        }
+
+        #passenger-map .gm-style {
+            width: 100% !important;
+            height: 100% !important;
+        }
+        #passenger-map.passenger-map-error::after {
+            content: 'Google Maps no pudo cargar. Revisa API key, facturación, restricciones de dominio y permisos de ubicación.';
+            position: absolute;
+            inset: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 1rem;
+            border-radius: 1.5rem;
+            background: rgba(255,255,255,.92);
+            color: #991b1b;
+            font-size: 11px;
+            font-weight: 900;
+            text-transform: uppercase;
+            font-style: italic;
+            z-index: 5;
+        }
+        #p-banners,
+        #p-wallet,
+        #active-trip-passenger {
+            z-index: 20;
+        }
+
+
+        /* Capa visible de búsqueda de conductor sobre Google Maps */
+        #radar,
+        #search-msg {
+            position: relative;
+            z-index: 35;
+        }
+        #radar .radar-pulse {
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+
+
+        .passenger-location-text { flex: 1; min-width: 0; }
+        .passenger-location-title { font-size: 9px; font-weight: 900; color: #111827; text-transform: uppercase; font-style: italic; letter-spacing: -0.02em; }
+        .passenger-location-address { margin-top: .15rem; font-size: 8px; font-weight: 800; color: #6b7280; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .passenger-destination-input { width: 100%; background: transparent; outline: none; border: 0; font-size: 11px; font-weight: 900; color: #111827; text-transform: uppercase; font-style: italic; }
+        .passenger-destination-input::placeholder { color: #9ca3af; }
+        .passenger-route-status { font-size: 8px; font-weight: 900; color: #6b7280; text-transform: uppercase; font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* Lista compacta de servicios en panel pasajero */
+        .passenger-services-list { display: flex; flex-direction: column; gap: .65rem; }
+        .passenger-service-option {
+            width: 100%;
+            min-height: 70px;
+            background: #fff;
+            border: 1px solid #eef0f3;
+            border-radius: 1.25rem;
+            padding: .65rem .75rem;
+            display: flex;
+            align-items: center;
+            gap: .75rem;
+            box-shadow: 0 8px 22px rgba(15, 23, 42, .055);
+            transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease, background .18s ease;
+        }
+        .passenger-service-option:active { transform: scale(.985); }
+        .passenger-service-option.selected {
+            border-color: #ef4444;
+            background: linear-gradient(180deg, #fff 0%, #fff7f7 100%);
+            box-shadow: 0 12px 28px rgba(239, 68, 68, .12);
+        }
+        .passenger-service-photo-wrap {
+            width: 58px;
+            height: 48px;
+            flex: 0 0 58px;
+            border-radius: 1rem;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .passenger-service-photo {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            background: transparent !important;
+            mix-blend-mode: normal;
+        }
+        .passenger-service-info { min-width: 0; flex: 1; text-align: left; }
+        .passenger-service-title { font-size: 12px; line-height: 1; font-weight: 900; font-style: italic; text-transform: uppercase; color: #111827; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .passenger-service-meta { margin-top: .32rem; display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .55rem; font-size: 8px; line-height: 1; font-weight: 900; text-transform: uppercase; font-style: italic; color: #6b7280; }
+        .passenger-service-meta span { display: inline-flex; align-items: center; gap: .2rem; white-space: nowrap; }
+        .passenger-service-price { flex: 0 0 auto; text-align: right; }
+        .passenger-service-price strong { display: block; font-size: 13px; line-height: 1; font-weight: 900; font-style: italic; color: #111827; }
+        .passenger-service-price small { display: block; margin-top: .25rem; font-size: 7px; line-height: 1; font-weight: 900; text-transform: uppercase; font-style: italic; color: #9ca3af; }
+        .compact-payment-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; }
+        .compact-payment-row .payment-opt { padding: .7rem .45rem; border-radius: 1rem; }
+
+        /* Bottom sheet pasajero deslizable: conserva el botón confirmar visible al minimizar */
+        #cost-sheet { touch-action: none; will-change: transform, max-height; }
+        #cost-sheet.sheet-dragging { transition: none !important; }
+        #cost-sheet.minimized {
+            max-height: 98px !important;
+            overflow: hidden !important;
+            padding-top: .75rem !important;
+            padding-bottom: calc(env(safe-area-inset-bottom, .5rem) + .5rem) !important;
+        }
+        #cost-sheet.minimized > *:not(#cost-sheet-handle):not(#btn-confirmar) {
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(12px);
+            transition: opacity .18s ease, transform .18s ease;
+        }
+        #cost-sheet.minimized #btn-confirmar {
+            position: absolute;
+            left: 1rem;
+            right: 1rem;
+            bottom: calc(env(safe-area-inset-bottom, .5rem) + .5rem);
+            width: auto;
+            margin-bottom: 0 !important;
+            z-index: 150;
+            pointer-events: auto;
+        }
+        #cost-sheet:not(.minimized) > * {
+            opacity: 1;
+            transform: none;
+        }
+        #passenger-view.passenger-destination-searching #cost-sheet {
+            display: none !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+            transform: translateY(100%) !important;
+        }
+        @media (min-width: 768px) {
+            #cost-sheet { max-width: 480px; left: 50% !important; right: auto !important; transform: translate(-50%, 100%); border-radius: 2rem 2rem 0 0; }
+            #cost-sheet.active { transform: translate(-50%, 0); }
+            #cost-sheet.minimized #btn-confirmar { left: 1rem; right: 1rem; }
+        }
+
+
+        /* Primera tarjeta compacta de solicitud de viaje - Panel Conductor */
+        #driver-trip-request-list { width: 100%; }
+        .driver-trip-request-card {
+            width: 100%;
+            background: #fff;
+            border: 1px solid #eef0f3;
+            border-radius: 1.65rem;
+            padding: .8rem;
+            box-shadow: 0 14px 34px rgba(15, 23, 42, .10);
+        }
+        .driver-request-avatar { width: 52px; height: 52px; border-radius: 999px; object-fit: cover; flex: 0 0 52px; }
+        .driver-request-avatar-fallback { width: 52px; height: 52px; border-radius: 999px; flex: 0 0 52px; }
+        .driver-request-pill { display: inline-flex; align-items: center; gap: .25rem; padding: .35rem .5rem; border-radius: 999px; background: #f9fafb; border: 1px solid #edf0f2; font-size: 8px; line-height: 1; font-weight: 900; text-transform: uppercase; font-style: italic; color: #374151; white-space: nowrap; }
+        .driver-request-route-row { display: grid; grid-template-columns: 12px minmax(0, 1fr); gap: .45rem; align-items: start; }
+        .driver-request-route-dot { width: 9px; height: 9px; border-radius: 999px; margin-top: .25rem; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.08); }
+        .driver-request-route-text { font-size: 9px; line-height: 1.22; font-weight: 800; text-transform: uppercase; font-style: italic; color: #4b5563; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+        .driver-request-action { border-radius: 1rem; padding: .75rem .5rem; font-size: 10px; line-height: 1; font-weight: 900; text-transform: uppercase; font-style: italic; transition: transform .16s ease, opacity .16s ease; }
+        .driver-request-action:active { transform: scale(.96); }
+

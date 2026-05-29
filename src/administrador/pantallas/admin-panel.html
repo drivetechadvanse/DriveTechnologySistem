@@ -1,0 +1,141 @@
+<!-- Panel Administrador -->
+    <div id="admin-view" class="hidden h-full flex flex-col bg-gray-100">
+        <header id="admin-header" class="px-4 py-3 flex items-center justify-between bg-gray-900 text-white z-10 shrink-0">
+            <button type="button" id="admin-menu-btn" onclick="openMenu()" class="p-1.5 bg-white/10 rounded-lg"><i data-lucide="menu" class="w-5 h-5 text-red-600"></i></button>
+            <button type="button" id="admin-back-btn" onclick="closeAdminWallet()" class="hidden p-1.5 bg-white/10 rounded-lg"><i data-lucide="arrow-left" class="w-5 h-5 text-red-600"></i></button>
+            <h2 id="admin-title" class="text-base font-black italic uppercase">PANEL <span class="text-red-600 text-lg">ADMIN</span></h2>
+            <button type="button" onclick="location.reload()" class="w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center"><i data-lucide="log-out" class="w-4 h-4 text-white"></i></button>
+        </header>
+        <div class="w-full h-12 bg-gray-400 flex items-center px-4 shrink-0"></div>
+        <div id="admin-icon-toolbar" class="admin-icon-toolbar w-full h-12 flex items-center gap-2 px-4 shrink-0">
+            <button type="button" id="admin-delete-btn" onclick="eliminarSeleccionados()" class="admin-icon-action bg-red-600 text-white px-2.5 py-1.5 rounded font-black text-[10px] uppercase italic inline-flex items-center justify-center active:scale-95 transition-all shadow-lg" title="Eliminar Selección" aria-label="Eliminar Selección">
+                <i data-lucide="trash-2" class="w-4 h-4 shrink-0"></i><span id="admin-delete-btn-text">Eliminar Selección</span>
+            </button>
+            <button type="button" id="admin-edit-btn" onclick="editarServicioSeleccionado()" class="hidden admin-icon-action bg-gray-900 text-white px-2.5 py-1.5 rounded font-black text-[10px] uppercase italic items-center justify-center active:scale-95 transition-all shadow-lg" title="Editar" aria-label="Editar">
+                <i data-lucide="pencil" class="w-4 h-4 shrink-0"></i><span>Editar</span>
+            </button>
+            <button type="button" id="admin-taximeter-new-btn" onclick="nuevoHorarioTaximetroViajesUrbanos()" class="hidden admin-icon-action bg-gray-900 text-white px-2.5 py-1.5 rounded font-black text-[10px] uppercase italic items-center justify-center active:scale-95 transition-all shadow-lg" title="Nuevo" aria-label="Nuevo">
+                <i data-lucide="plus" class="w-4 h-4 shrink-0"></i><span>Nuevo</span>
+            </button>
+            <button type="button" id="admin-taximeter-config-btn" onclick="abrirPantallaTaximetroViajesUrbanos()" class="hidden admin-icon-action bg-gray-900 text-white px-2.5 py-1.5 rounded font-black text-[10px] uppercase italic items-center justify-center active:scale-95 transition-all shadow-lg" title="Taxímetro" aria-label="Taxímetro">
+                <i data-lucide="gauge" class="w-4 h-4 shrink-0"></i><span>Taxímetro</span>
+            </button>
+            <button type="button" id="admin-taximeter-schedule-btn" onclick="abrirHorariosTaximetroViajesUrbanos()" class="hidden admin-icon-action bg-gray-900 text-white px-2.5 py-1.5 rounded font-black text-[10px] uppercase italic items-center justify-center active:scale-95 transition-all shadow-lg" title="Horarios del taxímetro" aria-label="Horarios del taxímetro">
+                <i data-lucide="briefcase" class="w-4 h-4 shrink-0"></i><span>Horarios del taxímetro</span>
+            </button>
+        </div>
+        <main id="admin-content" class="flex-1 p-5 space-y-4 overflow-y-auto">
+            <div id="admin-dashboard">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 mb-4">
+                    <p class="text-[8px] font-black text-gray-400 uppercase italic mb-1">Estado</p>
+                    <h4 class="text-xl font-black italic text-gray-800 uppercase">Sistema Operativo</h4>
+                </div>
+                <div>
+                    <h3 id="admin-list-title" class="text-[10px] font-black text-gray-400 uppercase italic mb-3 ml-1">Solicitudes</h3>
+                    <div id="admin-requests-container" class="space-y-3 pb-10"></div>
+                </div>
+            </div>
+            <div id="admin-wallet-section" class="hidden flex flex-col gap-4 pt-2">
+                <div class="space-y-2">
+                    <label class="reg-label">Buscar Pasajero</label>
+                    <div class="relative">
+                        <input type="text" id="admin-search-user" class="reg-input pl-12" placeholder="Nombre, Correo o Teléfono" oninput="searchPassengerInWallet()">
+                        <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-gray-200 space-y-4 shadow-sm">
+                    <div class="flex flex-col items-center justify-center py-2 border-b border-gray-100 mb-2">
+                        <p id="admin-search-status" class="text-[9px] font-black text-gray-400 uppercase italic">Saldo Actual del Pasajero</p>
+                        <h2 id="admin-view-saldo" class="text-2xl font-black italic text-gray-900 tracking-tighter">$0.00 MXN</h2>
+                    </div>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="reg-label">Monto de Operación</label>
+                            <input type="number" id="admin-monto-input" class="reg-input" placeholder="$0.00">
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <button type="button" onclick="adminModificarSaldo('sumar')" class="bg-green-600 text-white py-3 rounded-xl font-black text-[10px] uppercase italic flex items-center justify-center gap-2"><i data-lucide="plus-circle" class="w-4 h-4"></i> Recarga</button>
+                            <button type="button" onclick="adminModificarSaldo('restar')" class="bg-red-600 text-white py-3 rounded-xl font-black text-[10px] uppercase italic flex items-center justify-center gap-2"><i data-lucide="minus-circle" class="w-4 h-4"></i> Descuento</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="admin-historial-container" class="space-y-2">
+                    <h3 class="text-[10px] font-black text-gray-400 uppercase italic ml-1">Historial de Movimientos</h3>
+                    <div id="admin-movimientos-list" class="space-y-2"></div>
+                </div>
+            </div>
+            <div id="urban-trips-section" class="hidden flex-1">
+                <div class="mb-4 bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
+                    <p class="text-[8px] font-black text-gray-400 uppercase italic tracking-widest">Panel de Control / Servicios</p>
+                    <h3 class="text-lg font-black italic uppercase text-gray-900 leading-none mt-1">Viajes <span class="text-red-600">Urbanos</span></h3>
+                    <p class="text-[9px] font-bold text-gray-400 uppercase italic mt-2">Administración de servicios</p>
+                </div>
+
+                <div id="urban-services-admin-module" class="grid grid-cols-2 gap-3 pb-10">
+                    <div id="service-card-taxi-expres" data-urban-service-id="taxi-expres" onclick="seleccionarServicioUrbano('taxi-expres')" class="bg-white cursor-pointer rounded-2xl border border-gray-200 shadow-sm overflow-hidden active:scale-95 transition-all">
+                        <img id="service-image-taxi-expres" src="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22320%22%20height%3D%22220%22%20viewBox%3D%220%200%20320%20220%22%3E%3Crect%20width%3D%22320%22%20height%3D%22220%22%20rx%3D%2228%22%20fill%3D%22%23111827%22/%3E%3Ccircle%20cx%3D%22160%22%20cy%3D%2288%22%20r%3D%2248%22%20fill%3D%22%23ef4444%22/%3E%3Ctext%20x%3D%22160%22%20y%3D%22105%22%20text-anchor%3D%22middle%22%20font-size%3D%2242%22%20font-family%3D%22Arial%22%20font-weight%3D%22900%22%20fill%3D%22%23ffffff%22%3ETX%3C/text%3E%3Crect%20x%3D%2260%22%20y%3D%22158%22%20width%3D%22200%22%20height%3D%2220%22%20rx%3D%2210%22%20fill%3D%22%23ffffff%22%20opacity%3D%220.14%22/%3E%3C/svg%3E" alt="Taxi Express" class="w-full h-20 object-cover">
+                        <div class="p-3 text-center">
+                            <h3 id="service-name-taxi-expres" class="text-[10px] font-black italic uppercase text-gray-900 leading-tight">Taxi Express</h3>
+                        </div>
+                    </div>
+
+                    <div id="service-card-motocicleta" data-urban-service-id="motocicleta" onclick="seleccionarServicioUrbano('motocicleta')" class="bg-white cursor-pointer rounded-2xl border border-gray-200 shadow-sm overflow-hidden active:scale-95 transition-all">
+                        <img id="service-image-motocicleta" src="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22320%22%20height%3D%22220%22%20viewBox%3D%220%200%20320%20220%22%3E%3Crect%20width%3D%22320%22%20height%3D%22220%22%20rx%3D%2228%22%20fill%3D%22%231f2937%22/%3E%3Ccircle%20cx%3D%22160%22%20cy%3D%2288%22%20r%3D%2248%22%20fill%3D%22%23ef4444%22/%3E%3Ctext%20x%3D%22160%22%20y%3D%22105%22%20text-anchor%3D%22middle%22%20font-size%3D%2242%22%20font-family%3D%22Arial%22%20font-weight%3D%22900%22%20fill%3D%22%23ffffff%22%3EMT%3C/text%3E%3Crect%20x%3D%2260%22%20y%3D%22158%22%20width%3D%22200%22%20height%3D%2220%22%20rx%3D%2210%22%20fill%3D%22%23ffffff%22%20opacity%3D%220.14%22/%3E%3C/svg%3E" alt="Motocicleta" class="w-full h-20 object-cover">
+                        <div class="p-3 text-center">
+                            <h3 id="service-name-motocicleta" class="text-[10px] font-black italic uppercase text-gray-900 leading-tight">Motocicleta</h3>
+                        </div>
+                    </div>
+
+                    <div id="service-card-paqueteria" data-urban-service-id="paqueteria" onclick="seleccionarServicioUrbano('paqueteria')" class="bg-white cursor-pointer rounded-2xl border border-gray-200 shadow-sm overflow-hidden active:scale-95 transition-all">
+                        <img id="service-image-paqueteria" src="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22320%22%20height%3D%22220%22%20viewBox%3D%220%200%20320%20220%22%3E%3Crect%20width%3D%22320%22%20height%3D%22220%22%20rx%3D%2228%22%20fill%3D%22%23374151%22/%3E%3Ccircle%20cx%3D%22160%22%20cy%3D%2288%22%20r%3D%2248%22%20fill%3D%22%23ef4444%22/%3E%3Ctext%20x%3D%22160%22%20y%3D%22105%22%20text-anchor%3D%22middle%22%20font-size%3D%2242%22%20font-family%3D%22Arial%22%20font-weight%3D%22900%22%20fill%3D%22%23ffffff%22%3EPK%3C/text%3E%3Crect%20x%3D%2260%22%20y%3D%22158%22%20width%3D%22200%22%20height%3D%2220%22%20rx%3D%2210%22%20fill%3D%22%23ffffff%22%20opacity%3D%220.14%22/%3E%3C/svg%3E" alt="Paquetería" class="w-full h-20 object-cover">
+                        <div class="p-3 text-center">
+                            <h3 id="service-name-paqueteria" class="text-[10px] font-black italic uppercase text-gray-900 leading-tight">Paquetería</h3>
+                        </div>
+                    </div>
+
+                    <div id="service-card-taxi-xl" data-urban-service-id="taxi-xl" onclick="seleccionarServicioUrbano('taxi-xl')" class="bg-white cursor-pointer rounded-2xl border border-gray-200 shadow-sm overflow-hidden active:scale-95 transition-all">
+                        <img id="service-image-taxi-xl" src="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22320%22%20height%3D%22220%22%20viewBox%3D%220%200%20320%20220%22%3E%3Crect%20width%3D%22320%22%20height%3D%22220%22%20rx%3D%2228%22%20fill%3D%22%234b5563%22/%3E%3Ccircle%20cx%3D%22160%22%20cy%3D%2288%22%20r%3D%2248%22%20fill%3D%22%23ef4444%22/%3E%3Ctext%20x%3D%22160%22%20y%3D%22105%22%20text-anchor%3D%22middle%22%20font-size%3D%2242%22%20font-family%3D%22Arial%22%20font-weight%3D%22900%22%20fill%3D%22%23ffffff%22%3EXL%3C/text%3E%3Crect%20x%3D%2260%22%20y%3D%22158%22%20width%3D%22200%22%20height%3D%2220%22%20rx%3D%2210%22%20fill%3D%22%23ffffff%22%20opacity%3D%220.14%22/%3E%3C/svg%3E" alt="Taxi XL para 10 personas" class="w-full h-20 object-cover">
+                        <div class="p-3 text-center">
+                            <h3 id="service-name-taxi-xl" class="text-[10px] font-black italic uppercase text-gray-900 leading-tight">Taxi XL<br><span class="text-[8px] text-gray-400">10 personas</span></h3>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="urban-service-edit-panel" class="hidden bg-white rounded-2xl border border-gray-200 shadow-sm p-4 mb-10">
+                    <div class="flex items-center justify-between mb-3">
+                        <div>
+                            <p class="text-[8px] font-black text-gray-400 uppercase italic tracking-widest">Modo edición</p>
+                            <h3 class="text-sm font-black italic uppercase text-gray-900">Editar servicio seleccionado</h3>
+                        </div>
+                        <button type="button" onclick="cancelarEdicionServicioUrbano()" class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center active:scale-95 transition-all" title="Cerrar edición" aria-label="Cerrar edición">
+                            <i data-lucide="x" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="reg-label">Nombre del servicio</label>
+                            <input type="text" id="urban-edit-name" class="reg-input" placeholder="Nombre del servicio">
+                        </div>
+                        <div>
+                            <label class="reg-label">Foto del servicio</label>
+                            <input type="file" id="urban-edit-photo" accept="image/*" class="hidden" onchange="previsualizarFotoServicioUrbano(this)">
+                            <button type="button" onclick="document.getElementById('urban-edit-photo').click()" class="w-full bg-gray-900 text-white py-3 rounded-xl font-black text-[10px] uppercase italic flex items-center justify-center gap-2 active:scale-95 transition-all">
+                                <i data-lucide="image" class="w-4 h-4"></i> Cambiar foto
+                            </button>
+                            <img id="urban-edit-preview" src="" class="hidden mt-3 w-full h-28 object-cover rounded-2xl border border-gray-200" alt="Vista previa del servicio">
+                        </div>
+                        <div>
+                            <label class="reg-label">Configuración del servicio</label>
+                            <textarea id="urban-edit-config" class="reg-input min-h-[90px] resize-none" placeholder="Configuración del servicio"></textarea>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <button type="button" onclick="cancelarEdicionServicioUrbano()" class="bg-gray-200 text-gray-700 py-3 rounded-xl font-black text-[10px] uppercase italic active:scale-95 transition-all">Cancelar</button>
+                            <button type="button" onclick="guardarEdicionServicioUrbano()" class="bg-red-600 text-white py-3 rounded-xl font-black text-[10px] uppercase italic active:scale-95 transition-all">Guardar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="urban-taximeter-section" class="hidden flex-1"></div>
+        </main>
+    </div>

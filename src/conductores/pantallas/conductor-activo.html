@@ -1,0 +1,68 @@
+<!-- Panel Operativo Conductor (NUEVO) -->
+    <div id="driver-view-active" class="hidden h-full flex flex-col bg-gray-50 relative">
+
+        <div id="driver-sidebar" class="absolute inset-y-0 left-0 w-72 bg-white shadow-2xl z-[200] transform -translate-x-full transition-transform duration-300">
+            <div class="p-5 border-b flex items-center justify-between">
+                <h3 class="text-xs font-black italic uppercase text-gray-800">Menú Driver</h3>
+                <button type="button" onclick="closeDriverSidebar()" class="p-2 rounded-lg bg-gray-100">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <div id="driver-sidebar-profile" class="p-5 bg-gray-900 text-white flex flex-col items-center text-center">
+                <div class="relative mb-3">
+                    <img id="driver-menu-photo" src="" class="hidden w-24 h-24 rounded-full object-cover border-4 border-red-600 shadow-xl bg-gray-800" alt="Foto del conductor">
+                    <div id="driver-menu-photo-fallback" class="w-24 h-24 rounded-full bg-red-600 text-white flex items-center justify-center font-black text-2xl italic border-4 border-red-600 shadow-xl">D</div>
+                    <div class="absolute -bottom-1 -right-1 bg-green-500 w-5 h-5 rounded-full border-4 border-gray-900"></div>
+                </div>
+                <h3 id="driver-menu-name" class="text-sm font-black uppercase italic tracking-tighter">Conductor</h3>
+                <div class="w-full grid grid-cols-2 gap-3 mt-4">
+                    <div class="bg-white/10 rounded-2xl p-3">
+                        <span class="block text-[8px] text-gray-400 font-black uppercase italic">Calificación</span>
+                        <span id="driver-menu-rating" class="block text-[11px] font-black text-yellow-400 italic mt-1">★ 5.0</span>
+                    </div>
+                    <div class="bg-white/10 rounded-2xl p-3">
+                        <span class="block text-[8px] text-gray-400 font-black uppercase italic">Viajes realizados</span>
+                        <span id="driver-menu-trips" class="block text-[11px] font-black text-white italic mt-1">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-4 space-y-2">
+                <button type="button" onclick="goToPassengerPanelFromDriver()" class="w-full flex items-center gap-3 p-3 text-gray-700 font-black hover:bg-gray-50 rounded-xl uppercase text-[10px] italic">
+                    <i data-lucide="user" class="text-red-600 w-4 h-4"></i><span>Pasajero</span>
+                </button>
+            </div>
+        </div>
+
+        <div id="driver-sidebar-overlay" onclick="closeDriverSidebar()" class="hidden absolute inset-0 bg-black/40 z-[190]"></div>
+        <header class="px-4 py-3 flex items-center justify-between border-b bg-gray-900 text-white z-10 shrink-0">
+            <div class="flex items-center gap-3">
+                <button type="button" onclick="openDriverSidebar()" class="p-2 rounded-lg bg-white/10">
+                    <i data-lucide="menu" class="w-5 h-5"></i>
+                </button>
+                <h2 class="text-xs font-black italic uppercase">Panel <span class="text-red-600">Driver</span></h2>
+            </div>
+            <button type="button" onclick="toggleDriverAvailability()" id="status-badge" class="flex items-center gap-2 bg-red-600/20 px-3 py-1 rounded-full border border-red-600/30">
+                <div id="status-dot" class="w-2 h-2 rounded-full bg-red-600"></div>
+                <span id="status-text" class="text-[9px] font-black uppercase italic text-red-600">No Disponible</span>
+            </button>
+        </header>
+
+        <main class="flex-1 flex flex-col p-6 space-y-6 overflow-y-auto">
+            
+<div class="flex flex-col items-center justify-center py-6">
+    <div id="search-pulse-driver" class="hidden w-16 h-16 bg-red-600 rounded-full flex items-center justify-center text-white mb-4 ping-slow">
+        <i data-lucide="radar" class="w-8 h-8"></i>
+    </div>
+
+    <h3 id="driver-main-msg" class="text-sm font-black italic uppercase text-gray-900 text-center">
+        Buscando viajes cercanos
+    </h3>
+</div>
+
+            <div id="driver-trip-request-list" class="hidden"></div>
+
+            
+        </main>
+    </div>

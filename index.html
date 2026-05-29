@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Drive MX | Pro System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="./src/estilos/styles.css">
+</head>
+<body>
+  <div id="app-container" class="max-w-md mx-auto bg-white shadow-2xl overflow-hidden relative flex flex-col"></div>
+
+  <script type="module">
+    const partials = ['src/portada/splash.html', 'src/common/overlay.html', 'src/common/sidebar.html', 'src/inicio/login.html', 'src/administrador/pantallas/admin-panel.html', 'src/pasajeros/pantallas/pasajero.html', 'src/conductores/pantallas/conductor-activo.html', 'src/conductores/pantallas/seleccion-conductor.html', 'src/inicio/registro-unificado.html'];
+
+    async function loadPartial(path) {
+      const res = await fetch(path);
+      if (!res.ok) throw new Error(`No se pudo cargar ${path}`);
+      return await res.text();
+    }
+
+    function loadClassicScript(src) {
+      return new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = src;
+        s.onload = resolve;
+        s.onerror = reject;
+        document.body.appendChild(s);
+      });
+    }
+
+    async function bootDriveMX() {
+      const app = document.getElementById('app-container');
+      app.innerHTML = (await Promise.all(partials.map(loadPartial))).join('\n');
+
+      await loadClassicScript('./src/common/app.js');
+      await import('./src/firebase/firebase-bridge.js');
+      await import('./src/firestore/global-sync.js');
+      const maps = await import('./src/mapas/google-maps-loader.js');
+      maps.loadGoogleMaps();
+    }
+
+    bootDriveMX().catch((error) => {
+      console.error(error);
+      document.body.innerHTML = '<div style="padding:24px;font-family:Inter,sans-serif"><b>Error cargando Drive MX.</b><br>Revisa rutas de archivos en Vercel/GitHub.</div>';
+    });
+  </script>
+</body>
+</html>

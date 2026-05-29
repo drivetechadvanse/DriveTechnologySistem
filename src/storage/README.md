@@ -1,0 +1,1 @@
+Aquí queda reservado el código relacionado con Firebase Storage. En esta separación, las funciones reales de Storage quedaron en `src/firebase/firebase-bridge.js` y la sincronización global en `src/firestore/global-sync.js` para no romper dependencias.

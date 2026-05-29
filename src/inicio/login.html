@@ -1,0 +1,13 @@
+<!-- Login Screen -->
+    <div id="login-screen" class="hidden absolute inset-0 z-[150] bg-white p-8 flex flex-col items-center justify-center text-center">
+        <div class="w-12 h-12 bg-red-600 rounded-xl mb-6 animate-bounce-custom shadow-lg shadow-red-600/20 flex items-center justify-center">
+            <i data-lucide="navigation" class="text-white w-6 h-6"></i>
+        </div>
+        <h2 class="text-3xl font-black italic uppercase mb-12 leading-none tracking-tighter">BIENVENIDO</h2>
+        <div class="space-y-4 w-full">
+            <input type="text" id="login-email" placeholder="Usuario o Correo" class="reg-input text-left">
+            <input type="password" id="login-pass" placeholder="Contraseña" class="reg-input text-left">
+            <button type="button" onclick="handleAuth()" class="w-full bg-red-600 text-white py-4 rounded-xl font-black text-[11px] uppercase italic shadow-lg active:scale-95 transition-all">Ingresar</button>
+            <button type="button" onclick="startPassengerRegistration()" class="mt-4 text-[10px] font-black text-gray-400 uppercase italic hover:text-red-600 transition-colors">Quiero crear una cuenta</button>
+        </div>
+    </div>
