@@ -1,10 +1,46 @@
+    function getTaximeterSchedulesUrbanTripsData() {
+        return JSON.parse(localStorage.getItem('admin_horarios_taximetro_viajes_urbanos') || '{}');
+    }
+
+    function saveTaximeterSchedulesUrbanTripsData(data) {
+        localStorage.setItem('admin_horarios_taximetro_viajes_urbanos', JSON.stringify(data));
+    }
+
+
+    function timeToMinutesTaximeter(value) {
+        if (!value || !value.includes(':')) return 0;
+        const parts = value.split(':').map(Number);
+        return (parts[0] * 60) + parts[1];
+    }
+
+    function isNowInsideTaximeterSchedule(schedule, now = new Date()) {
+        const current = (now.getHours() * 60) + now.getMinutes();
+        const start = timeToMinutesTaximeter(schedule.desde);
+        const end = timeToMinutesTaximeter(schedule.hasta);
+
+        if (start === end) return true;
+        if (start < end) return current >= start && current <= end;
+        return current >= start || current <= end;
+    }
+
+
+    function formatTaximeterTime(value) {
+        if (!value || !value.includes(':')) return '--:--';
+        const [hourText, minuteText] = value.split(':');
+        let hour = Number(hourText);
+        const suffix = hour >= 12 ? 'PM' : 'AM';
+        let displayHour = hour % 12;
+        if (displayHour === 0) displayHour = 12;
+        return `${String(displayHour).padStart(2, '0')}:${minuteText} ${suffix}`;
+    }
+
     function renderHorariosTaximetroViajesUrbanos(showForm = false) {
-        if (!taximeterSelectedUrbanServiceId) return;
+        if (!window.taximeterSelectedUrbanServiceId) return;
 
         const taximeterSection = document.getElementById('urban-taximeter-section');
         if (!taximeterSection) return;
 
-        const serviceId = taximeterSelectedUrbanServiceId;
+        const serviceId = window.taximeterSelectedUrbanServiceId;
         const serviceName = getUrbanServiceDisplayName(serviceId);
         const status = getTaximeterServiceRealtimeStatus(serviceId);
         const nowText = new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -16,7 +52,7 @@
             : status.schedules.map(schedule => {
                 const isActive = isNowInsideTaximeterSchedule(schedule);
                 return `
-                    <div id="taximeter-schedule-card-${schedule.id}" onclick="seleccionarHorarioTaximetroViajesUrbanos('${schedule.id}')" class="bg-white cursor-pointer rounded-2xl border ${selectedTaximeterScheduleId === schedule.id ? 'card-selected ring-2 ring-red-500' : (isActive ? 'border-green-200' : 'border-gray-200')} shadow-sm p-4 flex items-center justify-between gap-3 active:scale-[.99] transition-all">
+                    <div id="taximeter-schedule-card-${schedule.id}" onclick="seleccionarHorarioTaximetroViajesUrbanos('${schedule.id}')" class="bg-white cursor-pointer rounded-2xl border ${window.selectedTaximeterScheduleId === schedule.id ? 'card-selected ring-2 ring-red-500' : (isActive ? 'border-green-200' : 'border-gray-200')} shadow-sm p-4 flex items-center justify-between gap-3 active:scale-[.99] transition-all">
                         <div class="min-w-0">
                             <p class="text-[8px] font-black text-gray-400 uppercase italic tracking-widest">${serviceName}</p>
                             <h4 class="text-sm font-black italic uppercase text-gray-900 truncate">${schedule.nombre}</h4>
@@ -92,14 +128,14 @@
     }
 
     function seleccionarHorarioTaximetroViajesUrbanos(scheduleId) {
-        if (currentAdminView !== 'urban-taximeter' || !taximeterSelectedUrbanServiceId || !scheduleId) return;
+        if (window.currentAdminView !== 'urban-taximeter' || !window.taximeterSelectedUrbanServiceId || !scheduleId) return;
 
-        const schedules = getTaximeterSchedulesUrbanTripsData()[taximeterSelectedUrbanServiceId] || [];
+        const schedules = getTaximeterSchedulesUrbanTripsData()[window.taximeterSelectedUrbanServiceId] || [];
         const schedule = schedules.find(item => item.id === scheduleId);
         if (!schedule) return;
 
-        selectedTaximeterScheduleId = scheduleId;
-        currentTaximeterConfigContext = prepararContextoTaximetroViajesUrbanos(schedule);
+        window.selectedTaximeterScheduleId = scheduleId;
+        window.currentTaximeterConfigContext = prepararContextoTaximetroViajesUrbanos(schedule);
 
         document.querySelectorAll('[id^="taximeter-schedule-card-"]').forEach(card => {
             card.classList.remove('card-selected', 'ring-2', 'ring-red-500');
@@ -111,15 +147,15 @@
     }
 
     function abrirPantallaTaximetroViajesUrbanos() {
-        if (currentAdminView !== 'urban-taximeter' || !taximeterSelectedUrbanServiceId || !selectedTaximeterScheduleId) return;
+        if (window.currentAdminView !== 'urban-taximeter' || !window.taximeterSelectedUrbanServiceId || !window.selectedTaximeterScheduleId) return;
 
         const data = getTaximeterSchedulesUrbanTripsData();
-        const schedules = data[taximeterSelectedUrbanServiceId] || [];
-        const schedule = schedules.find(item => item.id === selectedTaximeterScheduleId);
+        const schedules = data[window.taximeterSelectedUrbanServiceId] || [];
+        const schedule = schedules.find(item => item.id === window.selectedTaximeterScheduleId);
         if (!schedule) return;
 
-        currentTaximeterConfigContext = prepararContextoTaximetroViajesUrbanos(schedule);
-        currentAdminView = 'urban-taximeter-config';
+        window.currentTaximeterConfigContext = prepararContextoTaximetroViajesUrbanos(schedule);
+        window.currentAdminView = 'urban-taximeter-config';
 
         const dashboard = document.getElementById('admin-dashboard');
         const wallet = document.getElementById('admin-wallet-section');
@@ -164,7 +200,7 @@
     }
 
     function guardarHorarioTaximetroViajesUrbanos() {
-        if (currentAdminView !== 'urban-taximeter' || !taximeterSelectedUrbanServiceId) return;
+        if (window.currentAdminView !== 'urban-taximeter' || !window.taximeterSelectedUrbanServiceId) return;
 
         const nameInput = document.getElementById('taximeter-schedule-name');
         const startInput = document.getElementById('taximeter-schedule-start');
@@ -179,7 +215,7 @@
         }
 
         const data = getTaximeterSchedulesUrbanTripsData();
-        const serviceId = taximeterSelectedUrbanServiceId;
+        const serviceId = window.taximeterSelectedUrbanServiceId;
         if (!data[serviceId]) data[serviceId] = [];
 
         data[serviceId].push({
@@ -192,21 +228,21 @@
         });
 
         saveTaximeterSchedulesUrbanTripsData(data);
-        selectedTaximeterScheduleId = null;
-        currentTaximeterConfigContext = null;
+        window.selectedTaximeterScheduleId = null;
+        window.currentTaximeterConfigContext = null;
         renderHorariosTaximetroViajesUrbanos(false);
         updateTaximeterRealtimeStatus();
     }
 
     function eliminarHorarioTaximetroViajesUrbanos(scheduleId) {
-        if (!taximeterSelectedUrbanServiceId || !scheduleId) return;
+        if (!window.taximeterSelectedUrbanServiceId || !scheduleId) return;
 
         const data = getTaximeterSchedulesUrbanTripsData();
-        const serviceId = taximeterSelectedUrbanServiceId;
+        const serviceId = window.taximeterSelectedUrbanServiceId;
         data[serviceId] = (data[serviceId] || []).filter(schedule => schedule.id !== scheduleId);
-        if (selectedTaximeterScheduleId === scheduleId) {
-            selectedTaximeterScheduleId = null;
-            currentTaximeterConfigContext = null;
+        if (window.selectedTaximeterScheduleId === scheduleId) {
+            window.selectedTaximeterScheduleId = null;
+            window.currentTaximeterConfigContext = null;
             localStorage.removeItem('admin_taximetro_contexto_viajes_urbanos');
         }
         saveTaximeterSchedulesUrbanTripsData(data);
@@ -228,20 +264,20 @@
 
         localStorage.setItem('admin_estado_taximetro_viajes_urbanos', JSON.stringify(realtimeState));
 
-        if (currentTaximeterConfigContext && currentTaximeterConfigContext.serviceId && currentTaximeterConfigContext.scheduleId) {
-            const schedules = (allData[currentTaximeterConfigContext.serviceId] || []);
-            const linkedSchedule = schedules.find(schedule => schedule.id === currentTaximeterConfigContext.scheduleId);
+        if (window.currentTaximeterConfigContext && window.currentTaximeterConfigContext.serviceId && window.currentTaximeterConfigContext.scheduleId) {
+            const schedules = (allData[window.currentTaximeterConfigContext.serviceId] || []);
+            const linkedSchedule = schedules.find(schedule => schedule.id === window.currentTaximeterConfigContext.scheduleId);
             if (linkedSchedule) {
-                currentTaximeterConfigContext.active = isNowInsideTaximeterSchedule(linkedSchedule);
-                currentTaximeterConfigContext.updatedAt = new Date().toISOString();
-                localStorage.setItem('admin_taximetro_contexto_viajes_urbanos', JSON.stringify(currentTaximeterConfigContext));
+                window.currentTaximeterConfigContext.active = isNowInsideTaximeterSchedule(linkedSchedule);
+                window.currentTaximeterConfigContext.updatedAt = new Date().toISOString();
+                localStorage.setItem('admin_taximetro_contexto_viajes_urbanos', JSON.stringify(window.currentTaximeterConfigContext));
             }
         }
 
-        if ((currentAdminView === 'urban-taximeter' || currentAdminView === 'urban-taximeter-config') && taximeterSelectedUrbanServiceId) {
+        if ((window.currentAdminView === 'urban-taximeter' || window.currentAdminView === 'urban-taximeter-config') && window.taximeterSelectedUrbanServiceId) {
             const clock = document.getElementById('taximeter-realtime-clock');
             const statusBadge = document.getElementById('taximeter-realtime-status');
-            const status = getTaximeterServiceRealtimeStatus(taximeterSelectedUrbanServiceId);
+            const status = getTaximeterServiceRealtimeStatus(window.taximeterSelectedUrbanServiceId);
 
             if (clock) clock.innerText = new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
             if (statusBadge) {
@@ -252,10 +288,10 @@
     }
 
     function abrirHorariosTaximetroViajesUrbanos() {
-        if (currentAdminView !== 'urban-trips' || !selectedUrbanServiceId) return;
+        if (window.currentAdminView !== 'urban-trips' || !window.selectedUrbanServiceId) return;
 
-        taximeterSelectedUrbanServiceId = selectedUrbanServiceId;
-        currentAdminView = 'urban-taximeter';
+        window.taximeterSelectedUrbanServiceId = window.selectedUrbanServiceId;
+        window.currentAdminView = 'urban-taximeter';
 
         const dashboard = document.getElementById('admin-dashboard');
         const wallet = document.getElementById('admin-wallet-section');
@@ -294,8 +330,8 @@
             taximeterConfigBtn.classList.add('inline-flex');
         }
 
-        selectedTaximeterScheduleId = null;
-        currentTaximeterConfigContext = null;
+        window.selectedTaximeterScheduleId = null;
+        window.currentTaximeterConfigContext = null;
 
         document.getElementById('admin-title').innerHTML = 'HORARIOS <span class="text-red-600 text-lg">TAXÍMETRO</span>';
         cancelarEdicionServicioUrbano();
@@ -304,216 +340,14 @@
         lucide.createIcons();
     }
 
-    function renderPantallaConfiguracionTaximetroUrbano(showForm = false) {
-        if (!taximeterSelectedUrbanServiceId || !selectedTaximeterScheduleId) return;
-
-        const taximeterSection = document.getElementById('urban-taximeter-section');
-        if (!taximeterSection) return;
-
-        const schedule = getUrbanTaximeterSelectedSchedule();
-        if (!schedule) {
-            taximeterSection.innerHTML = `
-                <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 text-center">
-                    <i data-lucide="alert-circle" class="w-8 h-8 text-red-600 mx-auto mb-3"></i>
-                    <p class="text-[10px] font-black text-gray-500 uppercase italic">El horario seleccionado ya no existe.</p>
-                </div>`;
-            lucide.createIcons();
-            return;
-        }
-
-        currentTaximeterConfigContext = prepararContextoTaximetroViajesUrbanos(schedule);
-        const serviceId = taximeterSelectedUrbanServiceId;
-        const scheduleId = selectedTaximeterScheduleId;
-        const serviceName = getUrbanServiceDisplayName(serviceId);
-        const config = getTaximeterUrbanConfigForContext(serviceId, scheduleId);
-        const status = getTaximeterServiceRealtimeStatus(serviceId);
-        const nowText = new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-
-        const formHtml = showForm ? `
-            <div id="taximeter-urban-config-form" class="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 mb-4">
-                <div class="flex items-center justify-between mb-3">
-                    <div>
-                        <p class="text-[8px] font-black text-gray-400 uppercase italic tracking-widest">Nueva configuración</p>
-                        <h3 class="text-sm font-black italic uppercase text-gray-900">Taxímetro urbano</h3>
-                    </div>
-                    <button type="button" onclick="renderPantallaConfiguracionTaximetroUrbano(false)" class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center active:scale-95 transition-all" title="Cerrar" aria-label="Cerrar">
-                        <i data-lucide="x" class="w-4 h-4"></i>
-                    </button>
-                </div>
-
-                <div class="bg-gray-50 border border-gray-100 rounded-2xl p-3 mb-4">
-                    <p class="text-[8px] font-black text-gray-400 uppercase italic">Enlazado a</p>
-                    <h4 class="text-[11px] font-black uppercase italic text-gray-900 mt-1">${serviceName}</h4>
-                    <p class="text-[9px] font-black text-red-600 uppercase italic mt-1">${schedule.nombre} · ${formatTaximeterTime(schedule.desde)} - ${formatTaximeterTime(schedule.hasta)}</p>
-                </div>
-
-                <div class="space-y-4">
-                    <div>
-                        <h4 class="text-[10px] font-black text-gray-900 uppercase italic mb-3">Kilómetros</h4>
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="reg-label">Desde</label>
-                                <input type="number" id="taximeter-km-from" class="reg-input" min="0" step="0.01" placeholder="Kilómetro inicial" value="${config?.kilometros?.desde ?? 0}">
-                            </div>
-                            <div>
-                                <label class="reg-label">Hasta</label>
-                                <input type="number" id="taximeter-km-to" class="reg-input" min="0" step="0.01" placeholder="Límite máximo" value="${config?.kilometros?.hasta ?? ''}">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div>
-                        <h4 class="text-[10px] font-black text-gray-900 uppercase italic mb-3">Costos</h4>
-                        <div class="space-y-3">
-                            <div>
-                                <label class="reg-label">Precio inicial</label>
-                                <input type="number" id="taximeter-price-initial" class="reg-input" min="0" step="0.01" placeholder="Banderazo del taxímetro" value="${config?.costos?.precioInicial ?? ''}">
-                            </div>
-                            <div>
-                                <label class="reg-label">Precio por minuto</label>
-                                <input type="number" id="taximeter-price-minute" class="reg-input" min="0" step="0.01" placeholder="Costo por tráfico o tiempo transcurrido" value="${config?.costos?.precioPorMinuto ?? ''}">
-                            </div>
-                            <div>
-                                <label class="reg-label">Precio por kilómetro</label>
-                                <input type="number" id="taximeter-price-km" class="reg-input" min="0" step="0.01" placeholder="Costo según distancia recorrida" value="${config?.costos?.precioPorKilometro ?? ''}">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-3 pt-1">
-                        <button type="button" onclick="renderPantallaConfiguracionTaximetroUrbano(false)" class="bg-gray-200 text-gray-700 py-3 rounded-xl font-black text-[10px] uppercase italic active:scale-95 transition-all">Cancelar</button>
-                        <button type="button" onclick="guardarConfiguracionTaximetroUrbano()" class="bg-red-600 text-white py-3 rounded-xl font-black text-[10px] uppercase italic active:scale-95 transition-all">Guardar</button>
-                    </div>
-                </div>
-            </div>` : '';
-
-        const savedConfigHtml = config ? `
-            <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
-                <div class="flex items-center justify-between mb-3">
-                    <div>
-                        <p class="text-[8px] font-black text-gray-400 uppercase italic tracking-widest">Configuración guardada</p>
-                        <h3 class="text-sm font-black italic uppercase text-gray-900">${serviceName}</h3>
-                    </div>
-                    <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase italic bg-green-50 text-green-700 border border-green-100">Activa</span>
-                </div>
-                <div class="grid grid-cols-2 gap-3 mb-3">
-                    <div class="bg-gray-50 rounded-2xl p-3 border border-gray-100">
-                        <p class="text-[8px] font-black text-gray-400 uppercase italic">Desde</p>
-                        <h4 class="text-[12px] font-black uppercase italic text-gray-900">Km ${config.kilometros.desde}</h4>
-                    </div>
-                    <div class="bg-gray-50 rounded-2xl p-3 border border-gray-100 text-right">
-                        <p class="text-[8px] font-black text-gray-400 uppercase italic">Hasta</p>
-                        <h4 class="text-[12px] font-black uppercase italic text-gray-900">Km ${config.kilometros.hasta}</h4>
-                    </div>
-                </div>
-                <div class="grid grid-cols-3 gap-2">
-                    <div class="bg-gray-900 text-white rounded-2xl p-3">
-                        <p class="text-[8px] font-black text-gray-500 uppercase italic">Inicial</p>
-                        <h4 class="text-[11px] font-black uppercase italic">$${Number(config.costos.precioInicial).toFixed(2)}</h4>
-                    </div>
-                    <div class="bg-gray-900 text-white rounded-2xl p-3">
-                        <p class="text-[8px] font-black text-gray-500 uppercase italic">Minuto</p>
-                        <h4 class="text-[11px] font-black uppercase italic">$${Number(config.costos.precioPorMinuto).toFixed(2)}</h4>
-                    </div>
-                    <div class="bg-gray-900 text-white rounded-2xl p-3">
-                        <p class="text-[8px] font-black text-gray-500 uppercase italic">Kilómetro</p>
-                        <h4 class="text-[11px] font-black uppercase italic">$${Number(config.costos.precioPorKilometro).toFixed(2)}</h4>
-                    </div>
-                </div>
-            </div>` : `
-            <div class="bg-white rounded-2xl border border-dashed border-gray-300 p-6 text-center">
-                <i data-lucide="plus-circle" class="w-7 h-7 text-gray-300 mx-auto mb-3"></i>
-                <p class="text-[10px] font-black text-gray-400 uppercase italic">Sin configuración de costos para este horario</p>
-                <p class="text-[9px] font-bold text-gray-400 uppercase italic mt-2">Pulsa el botón Nuevo de la barra superior.</p>
-            </div>`;
-
-        taximeterSection.innerHTML = `
-            <div class="mb-4 bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
-                <p class="text-[8px] font-black text-gray-400 uppercase italic tracking-widest">Panel de Control / Servicios / Viajes urbanos</p>
-                <h3 class="text-lg font-black italic uppercase text-gray-900 leading-none mt-1">Taxímetro <span class="text-red-600">Urbano</span></h3>
-                <p class="text-[9px] font-bold text-gray-400 uppercase italic mt-2">Servicio: <span class="text-gray-900">${serviceName}</span></p>
-                <p class="text-[9px] font-bold text-gray-400 uppercase italic mt-1">Horario: <span class="text-gray-900">${schedule.nombre}</span> · ${formatTaximeterTime(schedule.desde)} - ${formatTaximeterTime(schedule.hasta)}</p>
-            </div>
-
-            <div class="bg-gray-900 text-white rounded-2xl p-4 mb-4 flex items-center justify-between gap-3">
-                <div>
-                    <p class="text-[8px] font-black text-gray-500 uppercase italic tracking-widest">Sincronizado con hora real</p>
-                    <h4 id="taximeter-realtime-clock" class="text-sm font-black italic uppercase">${nowText}</h4>
-                </div>
-                <div class="text-right">
-                    <p class="text-[8px] font-black text-gray-500 uppercase italic">Taxímetro</p>
-                    <span id="taximeter-realtime-status" class="inline-flex mt-1 px-3 py-1 rounded-full text-[8px] font-black uppercase italic ${status.active ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-red-600/20 text-red-400 border border-red-600/30'}">${status.active ? 'Activado' : 'Desactivado'}</span>
-                </div>
-            </div>
-
-            ${formHtml}
-
-            <div class="space-y-3 pb-10">
-                ${savedConfigHtml}
-            </div>`;
-
-        lucide.createIcons();
-    }
-
-    function guardarConfiguracionTaximetroUrbano() {
-        if (currentAdminView !== 'urban-taximeter-config' || !taximeterSelectedUrbanServiceId || !selectedTaximeterScheduleId) return;
-
-        const schedule = getUrbanTaximeterSelectedSchedule();
-        if (!schedule) {
-            alert('Selecciona un horario válido antes de guardar la configuración.');
-            return;
-        }
-
-        const kmFrom = Number(document.getElementById('taximeter-km-from')?.value || 0);
-        const kmTo = Number(document.getElementById('taximeter-km-to')?.value || 0);
-        const priceInitial = Number(document.getElementById('taximeter-price-initial')?.value || 0);
-        const priceMinute = Number(document.getElementById('taximeter-price-minute')?.value || 0);
-        const priceKm = Number(document.getElementById('taximeter-price-km')?.value || 0);
-
-        if (kmTo <= kmFrom) {
-            alert('El límite máximo de kilómetros debe ser mayor al kilómetro inicial.');
-            return;
-        }
-
-        if (priceInitial <= 0 || priceMinute < 0 || priceKm <= 0) {
-            alert('Completa correctamente los costos del taxímetro.');
-            return;
-        }
-
-        const config = {
-            serviceId: taximeterSelectedUrbanServiceId,
-            serviceName: getUrbanServiceDisplayName(taximeterSelectedUrbanServiceId),
-            scheduleId: selectedTaximeterScheduleId,
-            scheduleName: schedule.nombre,
-            horario: {
-                desde: schedule.desde,
-                hasta: schedule.hasta
-            },
-            kilometros: {
-                desde: kmFrom,
-                hasta: kmTo
-            },
-            costos: {
-                precioInicial: priceInitial,
-                precioPorMinuto: priceMinute,
-                precioPorKilometro: priceKm
-            },
-            updatedAt: new Date().toISOString()
-        };
-
-        setTaximeterUrbanConfigForContext(taximeterSelectedUrbanServiceId, selectedTaximeterScheduleId, config);
-        currentTaximeterConfigContext = prepararContextoTaximetroViajesUrbanos(schedule);
-        renderPantallaConfiguracionTaximetroUrbano(false);
-        updateTaximeterRealtimeStatus();
-    }
 
     function nuevoHorarioTaximetroViajesUrbanos() {
-        if (!taximeterSelectedUrbanServiceId) return;
-        if (currentAdminView === 'urban-taximeter') {
+        if (!window.taximeterSelectedUrbanServiceId) return;
+        if (window.currentAdminView === 'urban-taximeter') {
             renderHorariosTaximetroViajesUrbanos(true);
             return;
         }
-        if (currentAdminView === 'urban-taximeter-config') {
+        if (window.currentAdminView === 'urban-taximeter-config') {
             renderPantallaConfiguracionTaximetroUrbano(true);
         }
     }
@@ -521,5 +355,3 @@
     if (!window.taximeterUrbanTripsRealtimeInterval) {
         window.taximeterUrbanTripsRealtimeInterval = setInterval(updateTaximeterRealtimeStatus, 1000);
     }
-
-    
