@@ -1,11 +1,3 @@
-    function getTaximeterSchedulesUrbanTripsData() {
-        return JSON.parse(localStorage.getItem('admin_horarios_taximetro_viajes_urbanos') || '{}');
-    }
-
-    function saveTaximeterSchedulesUrbanTripsData(data) {
-        localStorage.setItem('admin_horarios_taximetro_viajes_urbanos', JSON.stringify(data));
-    }
-
     function getTaximeterUrbanConfigData() {
         return JSON.parse(localStorage.getItem('admin_config_taximetro_viajes_urbanos') || '{}');
     }
@@ -30,16 +22,16 @@
     }
 
     function getUrbanTaximeterSelectedSchedule() {
-        if (!taximeterSelectedUrbanServiceId || !selectedTaximeterScheduleId) return null;
-        const schedules = getTaximeterSchedulesUrbanTripsData()[taximeterSelectedUrbanServiceId] || [];
-        return schedules.find(item => item.id === selectedTaximeterScheduleId) || null;
+        if (!window.taximeterSelectedUrbanServiceId || !window.selectedTaximeterScheduleId) return null;
+        const schedules = getTaximeterSchedulesUrbanTripsData()[window.taximeterSelectedUrbanServiceId] || [];
+        return schedules.find(item => item.id === window.selectedTaximeterScheduleId) || null;
     }
 
     function prepararContextoTaximetroViajesUrbanos(schedule) {
-        if (!schedule || !taximeterSelectedUrbanServiceId) return null;
+        if (!schedule || !window.taximeterSelectedUrbanServiceId) return null;
         const context = {
-            serviceId: taximeterSelectedUrbanServiceId,
-            serviceName: getUrbanServiceDisplayName(taximeterSelectedUrbanServiceId),
+            serviceId: window.taximeterSelectedUrbanServiceId,
+            serviceName: getUrbanServiceDisplayName(window.taximeterSelectedUrbanServiceId),
             scheduleId: schedule.id,
             scheduleName: schedule.nombre,
             desde: schedule.desde,
@@ -51,6 +43,7 @@
         return context;
     }
 
+
     function isKmInsideTaximeterRange(config, km) {
         if (!config || !config.kilometros) return false;
         const minKm = Number(config.kilometros.desde || 0);
@@ -59,21 +52,28 @@
         return km >= minKm && (maxKm <= 0 || km <= maxKm);
     }
 
-    function timeToMinutesTaximeter(value) {
-        if (!value || !value.includes(':')) return 0;
-        const parts = value.split(':').map(Number);
-        return (parts[0] * 60) + parts[1];
+    function getPassengerRouteMetricsForPricing() {
+        return {
+            km: Number(window.appState.routeDistanceKm || 0),
+            minutes: Number(window.appState.routeDurationMinutes || 0)
+        };
     }
 
-    function isNowInsideTaximeterSchedule(schedule, now = new Date()) {
-        const current = (now.getHours() * 60) + now.getMinutes();
-        const start = timeToMinutesTaximeter(schedule.desde);
-        const end = timeToMinutesTaximeter(schedule.hasta);
+    function getActiveTaximeterConfigForPassenger(serviceId, metrics = getPassengerRouteMetricsForPricing()) {
+        const km = Number(metrics.km || 0);
+        const schedules = getTaximeterSchedulesUrbanTripsData()[serviceId] || [];
+        const activeSchedules = schedules.filter(schedule => isNowInsideTaximeterSchedule(schedule));
+        const matchingConfigs = activeSchedules
+            .map(schedule => {
+                const config = getTaximeterUrbanConfigForContext(serviceId, schedule.id);
+                return config ? { ...config, schedule } : null;
+            })
+            .filter(config => config && config.costos && isKmInsideTaximeterRange(config, km))
+            .sort((a, b) => Number(b.kilometros?.desde || 0) - Number(a.kilometros?.desde || 0));
 
-        if (start === end) return true;
-        if (start < end) return current >= start && current <= end;
-        return current >= start || current <= end;
+        return matchingConfigs[0] || null;
     }
+
 
     function getTaximeterServiceRealtimeStatus(serviceId) {
         const data = getTaximeterSchedulesUrbanTripsData();
@@ -86,12 +86,3 @@
         };
     }
 
-    function formatTaximeterTime(value) {
-        if (!value || !value.includes(':')) return '--:--';
-        const [hourText, minuteText] = value.split(':');
-        let hour = Number(hourText);
-        const suffix = hour >= 12 ? 'PM' : 'AM';
-        let displayHour = hour % 12;
-        if (displayHour === 0) displayHour = 12;
-        return `${String(displayHour).padStart(2, '0')}:${minuteText} ${suffix}`;
-    }
