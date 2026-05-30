@@ -1,17 +1,17 @@
  lucide.createIcons();
     let currentStep = 1;
     let registrationMode = 'driver'; 
-    let currentAdminView = 'requests'; 
+    window.currentAdminView = 'requests'; 
     let selectedIds = [];
-    let taximeterSelectedUrbanServiceId = null;
-    let selectedTaximeterScheduleId = null;
-    let currentTaximeterConfigContext = null;
+    window.taximeterSelectedUrbanServiceId = null;
+    window.selectedTaximeterScheduleId = null;
+    window.currentTaximeterConfigContext = null;
     let currentUser = null;
     let activePassengerUser = null;
     let activeDriverUser = null;
-    let activePanel = null;
+    window.activePanel = null;
     let isAvailable = false; // Estado del conductor
-    let appState = {
+    window.appState = {
         selectedPayment: 'efectivo',
         selectedServiceId: 'taxi-expres',
         precioViaje: 0.00,
@@ -27,8 +27,8 @@
     let passengerMap = null;
     let passengerMapMarker = null;
     let passengerDestinationMarker = null;
-    let passengerDirectionsService = null;
-    let passengerDirectionsRenderer = null;
+    window.passengerDirectionsService = null;
+    window.passengerDirectionsRenderer = null;
     let passengerRoutePolyline = null;
     let passengerRouteAnimationFrame = null;
     let passengerRouteAnimationToken = 0;
@@ -40,7 +40,7 @@
     let passengerGeocoder = null;
     let passengerAutocomplete = null;
     let passengerLocationWatchId = null;
-    let passengerRealtimeFareTimer = null;
+    window.passengerRealtimeFareTimer = null;
     let googleMapsReady = false;
     let passengerDestinationSearchActive = false;
     let passengerDestinationLastValidValue = '';
@@ -51,9 +51,9 @@
 
     function onGoogleMapsReady() {
         googleMapsReady = true;
-        if (activePanel === 'passenger' || activePanel === 'passenger-trip') {
+        if (window.activePanel === 'passenger' || window.activePanel === 'passenger-trip') {
             initPassengerMap();
-            if (activePanel === 'passenger-trip') startActiveTripDriverTracking();
+            if (window.activePanel === 'passenger-trip') startActiveTripDriverTracking();
         }
     }
     // El script de Google Maps necesita encontrar este callback en window.
@@ -70,7 +70,7 @@
         if (!mapContainer || typeof google === 'undefined' || !google.maps) return;
 
         const defaultCenter = { lat: 19.432608, lng: -99.133209 };
-        const currentCenter = appState.passengerLocation || defaultCenter;
+        const currentCenter = window.appState.passengerLocation || defaultCenter;
 
         if (!passengerMap) {
             passengerMap = new google.maps.Map(mapContainer, {
@@ -96,8 +96,8 @@
                 visible: false
             });
 
-            passengerDirectionsService = new google.maps.DirectionsService();
-            passengerDirectionsRenderer = new google.maps.DirectionsRenderer({
+            window.passengerDirectionsService = new google.maps.DirectionsService();
+            window.passengerDirectionsRenderer = new google.maps.DirectionsRenderer({
                 map: passengerMap,
                 suppressMarkers: true,
                 preserveViewport: true,
@@ -111,7 +111,7 @@
         setTimeout(() => {
             if (!passengerMap || typeof google === 'undefined' || !google.maps) return;
             google.maps.event.trigger(passengerMap, 'resize');
-            passengerMap.setCenter(appState.passengerLocation || currentCenter);
+            passengerMap.setCenter(window.appState.passengerLocation || currentCenter);
         }, 250);
 
         initPassengerDestinationAutocomplete();
@@ -133,14 +133,14 @@
                     lat: position.coords.latitude,
                     lng: position.coords.longitude
                 };
-                appState.passengerLocation = center;
+                window.appState.passengerLocation = center;
                 localStorage.setItem('drive_mx_passenger_location', JSON.stringify({
                     ...center,
                     accuracy: position.coords.accuracy,
                     updatedAt: new Date().toISOString()
                 }));
 
-                if (passengerMap && !appState.destinationLocation) passengerMap.setCenter(center);
+                if (passengerMap && !window.appState.destinationLocation) passengerMap.setCenter(center);
                 if (passengerMapMarker) passengerMapMarker.setPosition(center);
                 reverseGeocodePassengerLocation(center);
                 calculatePassengerRouteAndRefreshFares();
@@ -161,8 +161,8 @@
         if (!passengerGeocoder || !position) return;
         passengerGeocoder.geocode({ location: position }, (results, status) => {
             if (status === 'OK' && results && results[0]) {
-                appState.passengerAddress = results[0].formatted_address;
-                updatePassengerCurrentAddressText(appState.passengerAddress);
+                window.appState.passengerAddress = results[0].formatted_address;
+                updatePassengerCurrentAddressText(window.appState.passengerAddress);
             }
         });
     }
@@ -209,8 +209,8 @@
     }
 
     function clearPassengerDestinationSelection(message = 'Selecciona destino para calcular tarifas') {
-        appState.destinationLocation = null;
-        appState.destinationAddress = '';
+        window.appState.destinationLocation = null;
+        window.appState.destinationAddress = '';
         passengerDestinationLastValidValue = '';
         if (passengerDestinationMarker) passengerDestinationMarker.setVisible(false);
         const destinationEl = document.getElementById('trip-destination');
@@ -239,7 +239,7 @@
         if (event.key === 'Escape') {
             const input = document.getElementById('passenger-destination-input');
             if (input) input.blur();
-            if (!appState.destinationLocation) restorePassengerDestinationSearchState(false);
+            if (!window.appState.destinationLocation) restorePassengerDestinationSearchState(false);
         }
     }
 
@@ -248,7 +248,7 @@
             const input = document.getElementById('passenger-destination-input');
             if (document.activeElement === input) return;
 
-            if (!appState.destinationLocation) {
+            if (!window.appState.destinationLocation) {
                 restorePassengerDestinationSearchState(false);
                 return;
             }
@@ -277,16 +277,16 @@
                 lat: place.geometry.location.lat(),
                 lng: place.geometry.location.lng()
             };
-            appState.destinationLocation = destination;
-            appState.destinationAddress = place.formatted_address || place.name || input.value;
+            window.appState.destinationLocation = destination;
+            window.appState.destinationAddress = place.formatted_address || place.name || input.value;
 
             if (passengerDestinationMarker) {
                 passengerDestinationMarker.setPosition(destination);
                 passengerDestinationMarker.setVisible(true);
             }
             const destinationEl = document.getElementById('trip-destination');
-            if (destinationEl) destinationEl.innerText = appState.destinationAddress;
-            passengerDestinationLastValidValue = (appState.destinationAddress || input.value || '').trim();
+            if (destinationEl) destinationEl.innerText = window.appState.destinationAddress;
+            passengerDestinationLastValidValue = (window.appState.destinationAddress || input.value || '').trim();
             if (input) input.value = passengerDestinationLastValidValue;
             calculatePassengerRouteAndRefreshFares(true);
             restorePassengerDestinationSearchState(true);
@@ -295,18 +295,18 @@
     }
 
     function hasPassengerActiveRoute() {
-        return !!(appState.destinationLocation && Number(appState.routeDistanceKm || 0) > 0 && Number(appState.routeDurationMinutes || 0) > 0 && appState.routeSummary);
+        return !!(window.appState.destinationLocation && Number(window.appState.routeDistanceKm || 0) > 0 && Number(window.appState.routeDurationMinutes || 0) > 0 && window.appState.routeSummary);
     }
 
     function resetPassengerRoutePricing(message = 'Selecciona destino para calcular tarifas') {
-        appState.routeDistanceKm = 0;
-        appState.routeDurationMinutes = 0;
-        appState.routeSummary = '';
-        appState.precioViaje = 0;
+        window.appState.routeDistanceKm = 0;
+        window.appState.routeDurationMinutes = 0;
+        window.appState.routeSummary = '';
+        window.appState.precioViaje = 0;
         const routeSummaryEl = document.getElementById('passenger-route-summary');
         if (routeSummaryEl) routeSummaryEl.innerText = message;
         clearPassengerAnimatedRoute();
-        if (passengerDirectionsRenderer) passengerDirectionsRenderer.set('directions', null);
+        if (window.passengerDirectionsRenderer) window.passengerDirectionsRenderer.set('directions', null);
         refreshPassengerServicePricesAndEta();
     }
 
@@ -392,48 +392,6 @@
         };
 
         passengerRouteAnimationFrame = requestAnimationFrame(drawFrame);
-    }
-
-    function calculatePassengerRouteAndRefreshFares(fitRoute = false) {
-        if (!appState.passengerLocation || !appState.destinationLocation || !passengerDirectionsService) {
-            resetPassengerRoutePricing('Selecciona destino para calcular tarifas');
-            return;
-        }
-
-        passengerDirectionsService.route({
-            origin: appState.passengerLocation,
-            destination: appState.destinationLocation,
-            travelMode: google.maps.TravelMode.DRIVING,
-            drivingOptions: {
-                departureTime: new Date(),
-                trafficModel: google.maps.TrafficModel.BEST_GUESS
-            }
-        }, (result, status) => {
-            if (status === 'OK' && result.routes && result.routes[0] && result.routes[0].legs && result.routes[0].legs[0]) {
-                const leg = result.routes[0].legs[0];
-                const km = (leg.distance?.value || 0) / 1000;
-                const seconds = (leg.duration_in_traffic?.value || leg.duration?.value || 0);
-                appState.routeDistanceKm = km;
-                appState.routeDurationMinutes = Math.max(1, Math.ceil(seconds / 60));
-                appState.routeSummary = `${km.toFixed(1)} km • ${appState.routeDurationMinutes} min`;
-
-                const routeSummaryEl = document.getElementById('passenger-route-summary');
-                if (routeSummaryEl) routeSummaryEl.innerText = appState.routeSummary;
-
-                if (passengerDirectionsRenderer) passengerDirectionsRenderer.set('directions', null);
-                animatePassengerRouteLine(result.routes[0]);
-                refreshPassengerServicePricesAndEta();
-            } else {
-                resetPassengerRoutePricing('No se pudo calcular la ruta');
-            }
-        });
-    }
-
-    function startPassengerFareRealtimeSync() {
-        if (passengerRealtimeFareTimer) clearInterval(passengerRealtimeFareTimer);
-        passengerRealtimeFareTimer = setInterval(() => {
-            if (activePanel === 'passenger') calculatePassengerRouteAndRefreshFares();
-        }, 15000);
     }
 
 
@@ -657,7 +615,7 @@
     }
 
     function showAdminPanel() {
-        activePanel = 'admin';
+        window.activePanel = 'admin';
         hideAllMainPanels();
         configureSharedSidebarFor('admin');
         document.getElementById('admin-view').classList.remove('hidden');
@@ -769,7 +727,7 @@
 
     function showDriverPanel() {
         if (currentUser && currentUser.role === 'conductor') persistPanelSession(currentUser);
-        activePanel = 'driver';
+        window.activePanel = 'driver';
         hideAllMainPanels();
         configureSharedSidebarFor('driver');
         resetPassengerTransientState();
@@ -793,7 +751,7 @@
             persistPanelSession(passengerUser);
         }
 
-        activePanel = 'passenger';
+        window.activePanel = 'passenger';
         hideAllMainPanels();
         configureSharedSidebarFor('passenger');
         resetDriverTransientState();
@@ -806,7 +764,7 @@
     }
 
     function startPassengerRegistration() {
-        activePanel = 'registration';
+        window.activePanel = 'registration';
         registrationMode = 'passenger';
         tempBase64Photo = '';
         tempIneFrontPhoto = '';
@@ -1273,7 +1231,7 @@
     }
 
 
-    let selectedUrbanServiceId = null;
+    window.selectedUrbanServiceId = null;
     let urbanEditPhotoBase64 = null;
 
     function getServiciosUrbanosAdminData() {
@@ -1328,48 +1286,48 @@
     }
 
     function seleccionarServicioUrbano(id) {
-        if (currentAdminView !== 'urban-trips') return;
+        if (window.currentAdminView !== 'urban-trips') return;
         document.querySelectorAll('[data-urban-service-id]').forEach(card => {
             card.classList.remove('card-selected','ring-2','ring-red-500');
         });
         const card = document.getElementById(`service-card-${id}`);
         if (!card || card.classList.contains('hidden')) return;
-        selectedUrbanServiceId = id;
+        window.selectedUrbanServiceId = id;
         card.classList.add('card-selected','ring-2','ring-red-500');
     }
 
     function limpiarSeleccionServicioUrbano() {
-        selectedUrbanServiceId = null;
+        window.selectedUrbanServiceId = null;
         document.querySelectorAll('[data-urban-service-id]').forEach(card => {
             card.classList.remove('card-selected','ring-2','ring-red-500');
         });
     }
 
     function eliminarServicioUrbanoSeleccionado() {
-        if (currentAdminView !== 'urban-trips' || !selectedUrbanServiceId) return;
+        if (window.currentAdminView !== 'urban-trips' || !window.selectedUrbanServiceId) return;
 
         const data = getServiciosUrbanosAdminData();
-        if (!data[selectedUrbanServiceId]) return;
+        if (!data[window.selectedUrbanServiceId]) return;
 
-        data[selectedUrbanServiceId].deleted = true;
+        data[window.selectedUrbanServiceId].deleted = true;
         saveServiciosUrbanosAdminData(data);
 
-        const card = document.getElementById(`service-card-${selectedUrbanServiceId}`);
+        const card = document.getElementById(`service-card-${window.selectedUrbanServiceId}`);
         if (card) card.remove();
 
-        selectedUrbanServiceId = null;
+        window.selectedUrbanServiceId = null;
         cancelarEdicionServicioUrbano();
         lucide.createIcons();
     }
 
     function editarServicioSeleccionado() {
-        if (currentAdminView !== 'urban-trips' || !selectedUrbanServiceId) return;
+        if (window.currentAdminView !== 'urban-trips' || !window.selectedUrbanServiceId) return;
 
-        const card = document.getElementById(`service-card-${selectedUrbanServiceId}`);
+        const card = document.getElementById(`service-card-${window.selectedUrbanServiceId}`);
         if (!card) return;
 
-        const name = document.getElementById(`service-name-${selectedUrbanServiceId}`);
-        const img = document.getElementById(`service-image-${selectedUrbanServiceId}`);
+        const name = document.getElementById(`service-name-${window.selectedUrbanServiceId}`);
+        const img = document.getElementById(`service-image-${window.selectedUrbanServiceId}`);
         const panel = document.getElementById('urban-service-edit-panel');
         const inputName = document.getElementById('urban-edit-name');
         const inputConfig = document.getElementById('urban-edit-config');
@@ -1401,29 +1359,29 @@
     }
 
     function guardarEdicionServicioUrbano() {
-        if (currentAdminView !== 'urban-trips' || !selectedUrbanServiceId) return;
+        if (window.currentAdminView !== 'urban-trips' || !window.selectedUrbanServiceId) return;
 
         const data = getServiciosUrbanosAdminData();
-        const card = document.getElementById(`service-card-${selectedUrbanServiceId}`);
-        const name = document.getElementById(`service-name-${selectedUrbanServiceId}`);
-        const img = document.getElementById(`service-image-${selectedUrbanServiceId}`);
+        const card = document.getElementById(`service-card-${window.selectedUrbanServiceId}`);
+        const name = document.getElementById(`service-name-${window.selectedUrbanServiceId}`);
+        const img = document.getElementById(`service-image-${window.selectedUrbanServiceId}`);
         const inputName = document.getElementById('urban-edit-name');
         const inputConfig = document.getElementById('urban-edit-config');
 
-        if (!data[selectedUrbanServiceId]) data[selectedUrbanServiceId] = { nombre: '', imagen: null, config: '', deleted: false };
+        if (!data[window.selectedUrbanServiceId]) data[window.selectedUrbanServiceId] = { nombre: '', imagen: null, config: '', deleted: false };
 
         if (inputName && inputName.value.trim()) {
-            data[selectedUrbanServiceId].nombre = inputName.value.trim();
+            data[window.selectedUrbanServiceId].nombre = inputName.value.trim();
             if (name) name.innerHTML = inputName.value.trim();
         }
 
         if (urbanEditPhotoBase64) {
-            data[selectedUrbanServiceId].imagen = urbanEditPhotoBase64;
+            data[window.selectedUrbanServiceId].imagen = urbanEditPhotoBase64;
             if (img) img.src = urbanEditPhotoBase64;
         }
 
-        data[selectedUrbanServiceId].config = inputConfig ? inputConfig.value : '';
-        if (card) card.dataset.config = data[selectedUrbanServiceId].config;
+        data[window.selectedUrbanServiceId].config = inputConfig ? inputConfig.value : '';
+        if (card) card.dataset.config = data[window.selectedUrbanServiceId].config;
 
         saveServiciosUrbanosAdminData(data);
         renderPassengerUrbanServices();
@@ -1473,16 +1431,16 @@
 
         if (taximeterSection) taximeterSection.classList.add('hidden');
 
-        taximeterSelectedUrbanServiceId = null;
-        selectedTaximeterScheduleId = null;
-        currentTaximeterConfigContext = null;
+        window.taximeterSelectedUrbanServiceId = null;
+        window.selectedTaximeterScheduleId = null;
+        window.currentTaximeterConfigContext = null;
         limpiarSeleccionServicioUrbano();
         cancelarEdicionServicioUrbano();
     }
 
     function openUrbanTripsView() {
         closeAll();
-        currentAdminView = 'urban-trips';
+        window.currentAdminView = 'urban-trips';
         selectedIds = [];
 
         const dashboard = document.getElementById('admin-dashboard');
@@ -1520,67 +1478,14 @@
             taximeterConfigBtn.classList.add('hidden');
             taximeterConfigBtn.classList.remove('inline-flex');
         }
-        selectedTaximeterScheduleId = null;
-        currentTaximeterConfigContext = null;
+        window.selectedTaximeterScheduleId = null;
+        window.currentTaximeterConfigContext = null;
 
         document.getElementById('admin-title').innerHTML = 'VIAJES <span class="text-red-600 text-lg">URBANOS</span>';
         inicializarServiciosUrbanosAdmin();
         lucide.createIcons();
     }
 
-
-    function getTaximeterSchedulesUrbanTripsData() {
-        return JSON.parse(localStorage.getItem('admin_horarios_taximetro_viajes_urbanos') || '{}');
-    }
-
-    function saveTaximeterSchedulesUrbanTripsData(data) {
-        localStorage.setItem('admin_horarios_taximetro_viajes_urbanos', JSON.stringify(data));
-    }
-
-    function getTaximeterUrbanConfigData() {
-        return JSON.parse(localStorage.getItem('admin_config_taximetro_viajes_urbanos') || '{}');
-    }
-
-    function saveTaximeterUrbanConfigData(data) {
-        localStorage.setItem('admin_config_taximetro_viajes_urbanos', JSON.stringify(data));
-    }
-
-    function getTaximeterUrbanConfigKey(serviceId, scheduleId) {
-        return `${serviceId}__${scheduleId}`;
-    }
-
-    function getTaximeterUrbanConfigForContext(serviceId, scheduleId) {
-        const data = getTaximeterUrbanConfigData();
-        return data[getTaximeterUrbanConfigKey(serviceId, scheduleId)] || null;
-    }
-
-    function setTaximeterUrbanConfigForContext(serviceId, scheduleId, config) {
-        const data = getTaximeterUrbanConfigData();
-        data[getTaximeterUrbanConfigKey(serviceId, scheduleId)] = config;
-        saveTaximeterUrbanConfigData(data);
-    }
-
-    function getUrbanTaximeterSelectedSchedule() {
-        if (!taximeterSelectedUrbanServiceId || !selectedTaximeterScheduleId) return null;
-        const schedules = getTaximeterSchedulesUrbanTripsData()[taximeterSelectedUrbanServiceId] || [];
-        return schedules.find(item => item.id === selectedTaximeterScheduleId) || null;
-    }
-
-    function prepararContextoTaximetroViajesUrbanos(schedule) {
-        if (!schedule || !taximeterSelectedUrbanServiceId) return null;
-        const context = {
-            serviceId: taximeterSelectedUrbanServiceId,
-            serviceName: getUrbanServiceDisplayName(taximeterSelectedUrbanServiceId),
-            scheduleId: schedule.id,
-            scheduleName: schedule.nombre,
-            desde: schedule.desde,
-            hasta: schedule.hasta,
-            active: isNowInsideTaximeterSchedule(schedule),
-            linkedAt: new Date().toISOString()
-        };
-        localStorage.setItem('admin_taximetro_contexto_viajes_urbanos', JSON.stringify(context));
-        return context;
-    }
 
     function getUrbanServiceDisplayName(serviceId) {
         const name = document.getElementById(`service-name-${serviceId}`);
@@ -1603,52 +1508,6 @@
         const adminImage = document.getElementById(`service-image-${serviceId}`);
         const currentAdminSrc = adminImage ? (adminImage.getAttribute('src') || adminImage.src) : '';
         return isValidImageSource(currentAdminSrc) ? currentAdminSrc : getInitialServiceImage(serviceId);
-    }
-
-    function isKmInsideTaximeterRange(config, km) {
-        if (!config || !config.kilometros) return false;
-        const minKm = Number(config.kilometros.desde || 0);
-        const maxKm = Number(config.kilometros.hasta || 0);
-        if (!Number.isFinite(km) || km <= 0) return false;
-        return km >= minKm && (maxKm <= 0 || km <= maxKm);
-    }
-
-    function getPassengerRouteMetricsForPricing() {
-        return {
-            km: Number(appState.routeDistanceKm || 0),
-            minutes: Number(appState.routeDurationMinutes || 0)
-        };
-    }
-
-    function getActiveTaximeterConfigForPassenger(serviceId, metrics = getPassengerRouteMetricsForPricing()) {
-        const km = Number(metrics.km || 0);
-        const schedules = getTaximeterSchedulesUrbanTripsData()[serviceId] || [];
-        const activeSchedules = schedules.filter(schedule => isNowInsideTaximeterSchedule(schedule));
-        const matchingConfigs = activeSchedules
-            .map(schedule => {
-                const config = getTaximeterUrbanConfigForContext(serviceId, schedule.id);
-                return config ? { ...config, schedule } : null;
-            })
-            .filter(config => config && config.costos && isKmInsideTaximeterRange(config, km))
-            .sort((a, b) => Number(b.kilometros?.desde || 0) - Number(a.kilometros?.desde || 0));
-
-        return matchingConfigs[0] || null;
-    }
-
-    function calculatePassengerFinalPrice(serviceId) {
-        if (!hasPassengerActiveRoute()) return 0;
-        const metrics = getPassengerRouteMetricsForPricing();
-        const estimatedKm = Number(metrics.km || 0);
-        const estimatedMinutes = Number(metrics.minutes || 0);
-        const config = getActiveTaximeterConfigForPassenger(serviceId, metrics);
-
-        if (!config || !config.costos || estimatedKm <= 0) return 0;
-
-        const initial = Number(config.costos.precioInicial || 0);
-        const minute = Number(config.costos.precioPorMinuto || 0);
-        const kmPrice = Number(config.costos.precioPorKilometro || 0);
-        const total = initial + (minute * estimatedMinutes) + (kmPrice * estimatedKm);
-        return total > 0 ? Number(total.toFixed(2)) : 0;
     }
 
     function getPassengerServiceEta(serviceId, index) {
@@ -1686,7 +1545,7 @@
             const image = getPassengerUrbanServiceImage(serviceId);
             const eta = getPassengerServiceEta(serviceId, index);
             const price = calculatePassengerFinalPrice(serviceId);
-            const selected = appState.selectedServiceId === serviceId;
+            const selected = window.appState.selectedServiceId === serviceId;
             const priceText = price > 0 ? `$${price.toFixed(2)}` : '$0.00';
             return `
                 <button type="button" id="passenger-service-${serviceId}" data-service-id="${serviceId}" onclick="selectPassengerUrbanService('${serviceId}')" class="passenger-service-option ${selected ? 'selected' : ''}">
@@ -1707,10 +1566,10 @@
                 </button>`;
         }).join('');
 
-        if (!orderedIds.includes(appState.selectedServiceId)) {
-            appState.selectedServiceId = orderedIds[0] || 'taxi-expres';
+        if (!orderedIds.includes(window.appState.selectedServiceId)) {
+            window.appState.selectedServiceId = orderedIds[0] || 'taxi-expres';
         }
-        selectPassengerUrbanService(appState.selectedServiceId, true);
+        selectPassengerUrbanService(window.appState.selectedServiceId, true);
         lucide.createIcons();
     }
 
@@ -1727,590 +1586,30 @@
             const smallEl = cardEl ? cardEl.querySelector('.passenger-service-price small') : null;
             if (smallEl) smallEl.innerText = price > 0 ? 'MXN' : 'Sin ruta';
         });
-        selectPassengerUrbanService(appState.selectedServiceId || orderedIds[0] || 'taxi-expres', true);
+        selectPassengerUrbanService(window.appState.selectedServiceId || orderedIds[0] || 'taxi-expres', true);
         lucide.createIcons();
     }
 
     function selectPassengerUrbanService(serviceId, silent = false) {
-        appState.selectedServiceId = serviceId;
-        appState.precioViaje = calculatePassengerFinalPrice(serviceId);
+        window.appState.selectedServiceId = serviceId;
+        window.appState.precioViaje = calculatePassengerFinalPrice(serviceId);
 
         document.querySelectorAll('.passenger-service-option').forEach(card => card.classList.remove('selected'));
         const selectedCard = document.getElementById(`passenger-service-${serviceId}`);
         if (selectedCard) selectedCard.classList.add('selected');
 
         const selectedPrice = document.getElementById('passenger-selected-price');
-        if (selectedPrice) selectedPrice.innerText = appState.precioViaje > 0 ? `$${appState.precioViaje.toFixed(2)}` : '$0.00';
+        if (selectedPrice) selectedPrice.innerText = window.appState.precioViaje > 0 ? `$${window.appState.precioViaje.toFixed(2)}` : '$0.00';
         const tripCost = document.getElementById('trip-cost');
-        if (tripCost) tripCost.innerText = appState.precioViaje > 0 ? `$${appState.precioViaje.toFixed(2)} MXN` : '$0.00 MXN';
+        if (tripCost) tripCost.innerText = window.appState.precioViaje > 0 ? `$${window.appState.precioViaje.toFixed(2)} MXN` : '$0.00 MXN';
 
         if (!silent) lucide.createIcons();
     }
 
 
-    function timeToMinutesTaximeter(value) {
-        if (!value || !value.includes(':')) return 0;
-        const parts = value.split(':').map(Number);
-        return (parts[0] * 60) + parts[1];
-    }
-
-    function isNowInsideTaximeterSchedule(schedule, now = new Date()) {
-        const current = (now.getHours() * 60) + now.getMinutes();
-        const start = timeToMinutesTaximeter(schedule.desde);
-        const end = timeToMinutesTaximeter(schedule.hasta);
-
-        if (start === end) return true;
-        if (start < end) return current >= start && current <= end;
-        return current >= start || current <= end;
-    }
-
-    function getTaximeterServiceRealtimeStatus(serviceId) {
-        const data = getTaximeterSchedulesUrbanTripsData();
-        const schedules = data[serviceId] || [];
-        const activeSchedules = schedules.filter(schedule => isNowInsideTaximeterSchedule(schedule));
-        return {
-            active: activeSchedules.length > 0,
-            schedules,
-            activeSchedules
-        };
-    }
-
-    function formatTaximeterTime(value) {
-        if (!value || !value.includes(':')) return '--:--';
-        const [hourText, minuteText] = value.split(':');
-        let hour = Number(hourText);
-        const suffix = hour >= 12 ? 'PM' : 'AM';
-        let displayHour = hour % 12;
-        if (displayHour === 0) displayHour = 12;
-        return `${String(displayHour).padStart(2, '0')}:${minuteText} ${suffix}`;
-    }
-
-    function renderHorariosTaximetroViajesUrbanos(showForm = false) {
-        if (!taximeterSelectedUrbanServiceId) return;
-
-        const taximeterSection = document.getElementById('urban-taximeter-section');
-        if (!taximeterSection) return;
-
-        const serviceId = taximeterSelectedUrbanServiceId;
-        const serviceName = getUrbanServiceDisplayName(serviceId);
-        const status = getTaximeterServiceRealtimeStatus(serviceId);
-        const nowText = new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        const schedulesHtml = status.schedules.length === 0
-            ? `<div class="bg-white rounded-2xl border border-dashed border-gray-300 p-6 text-center">
-                    <i data-lucide="clock" class="w-7 h-7 text-gray-300 mx-auto mb-3"></i>
-                    <p class="text-[10px] font-black text-gray-400 uppercase italic">Sin horarios creados para este servicio</p>
-               </div>`
-            : status.schedules.map(schedule => {
-                const isActive = isNowInsideTaximeterSchedule(schedule);
-                return `
-                    <div id="taximeter-schedule-card-${schedule.id}" onclick="seleccionarHorarioTaximetroViajesUrbanos('${schedule.id}')" class="bg-white cursor-pointer rounded-2xl border ${selectedTaximeterScheduleId === schedule.id ? 'card-selected ring-2 ring-red-500' : (isActive ? 'border-green-200' : 'border-gray-200')} shadow-sm p-4 flex items-center justify-between gap-3 active:scale-[.99] transition-all">
-                        <div class="min-w-0">
-                            <p class="text-[8px] font-black text-gray-400 uppercase italic tracking-widest">${serviceName}</p>
-                            <h4 class="text-sm font-black italic uppercase text-gray-900 truncate">${schedule.nombre}</h4>
-                            <p class="text-[10px] font-black text-gray-500 uppercase italic mt-1">Desde ${formatTaximeterTime(schedule.desde)} hasta ${formatTaximeterTime(schedule.hasta)}</p>
-                        </div>
-                        <div class="flex flex-col items-end gap-2 shrink-0">
-                            <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase italic ${isActive ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-600 border border-red-100'}">${isActive ? 'Activo' : 'Inactivo'}</span>
-                            <button type="button" onclick="event.stopPropagation(); eliminarHorarioTaximetroViajesUrbanos('${schedule.id}')" class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center active:scale-95 transition-all" title="Eliminar horario" aria-label="Eliminar horario">
-                                <i data-lucide="trash-2" class="w-4 h-4 text-red-600"></i>
-                            </button>
-                        </div>
-                    </div>`;
-            }).join('');
-
-        const formHtml = showForm ? `
-            <div id="taximeter-schedule-form" class="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 mb-4">
-                <div class="flex items-center justify-between mb-3">
-                    <div>
-                        <p class="text-[8px] font-black text-gray-400 uppercase italic tracking-widest">Nuevo horario</p>
-                        <h3 class="text-sm font-black italic uppercase text-gray-900">Funcionamiento del taxímetro</h3>
-                    </div>
-                    <button type="button" onclick="renderHorariosTaximetroViajesUrbanos(false)" class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center active:scale-95 transition-all" title="Cerrar" aria-label="Cerrar">
-                        <i data-lucide="x" class="w-4 h-4"></i>
-                    </button>
-                </div>
-                <div class="space-y-3">
-                    <div>
-                        <label class="reg-label">Nombre del horario</label>
-                        <input type="text" id="taximeter-schedule-name" class="reg-input" placeholder="Ej: 24/7, Horario nocturno, Horario matutino">
-                    </div>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="reg-label">Desde</label>
-                            <input type="time" id="taximeter-schedule-start" class="reg-input" value="00:00">
-                        </div>
-                        <div>
-                            <label class="reg-label">Hasta</label>
-                            <input type="time" id="taximeter-schedule-end" class="reg-input" value="23:00">
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-3 pt-1">
-                        <button type="button" onclick="renderHorariosTaximetroViajesUrbanos(false)" class="bg-gray-200 text-gray-700 py-3 rounded-xl font-black text-[10px] uppercase italic active:scale-95 transition-all">Cancelar</button>
-                        <button type="button" onclick="guardarHorarioTaximetroViajesUrbanos()" class="bg-red-600 text-white py-3 rounded-xl font-black text-[10px] uppercase italic active:scale-95 transition-all">Guardar</button>
-                    </div>
-                </div>
-            </div>` : '';
-
-        taximeterSection.innerHTML = `
-            <div class="mb-4 bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
-                <p class="text-[8px] font-black text-gray-400 uppercase italic tracking-widest">Panel de Control / Servicios / Viajes urbanos</p>
-                <h3 class="text-lg font-black italic uppercase text-gray-900 leading-none mt-1">Horarios del <span class="text-red-600">Taxímetro</span></h3>
-                <p class="text-[9px] font-bold text-gray-400 uppercase italic mt-2">Servicio seleccionado: <span class="text-gray-900">${serviceName}</span></p>
-            </div>
-
-            <div class="bg-gray-900 text-white rounded-2xl p-4 mb-4 flex items-center justify-between gap-3">
-                <div>
-                    <p class="text-[8px] font-black text-gray-500 uppercase italic tracking-widest">Sincronizado con hora real</p>
-                    <h4 id="taximeter-realtime-clock" class="text-sm font-black italic uppercase">${nowText}</h4>
-                </div>
-                <div class="text-right">
-                    <p class="text-[8px] font-black text-gray-500 uppercase italic">Taxímetro</p>
-                    <span id="taximeter-realtime-status" class="inline-flex mt-1 px-3 py-1 rounded-full text-[8px] font-black uppercase italic ${status.active ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-red-600/20 text-red-400 border border-red-600/30'}">${status.active ? 'Activado' : 'Desactivado'}</span>
-                </div>
-            </div>
-
-            ${formHtml}
-
-            <div class="space-y-3 pb-10">
-                ${schedulesHtml}
-            </div>`;
-
-        lucide.createIcons();
-    }
-
-    function seleccionarHorarioTaximetroViajesUrbanos(scheduleId) {
-        if (currentAdminView !== 'urban-taximeter' || !taximeterSelectedUrbanServiceId || !scheduleId) return;
-
-        const schedules = getTaximeterSchedulesUrbanTripsData()[taximeterSelectedUrbanServiceId] || [];
-        const schedule = schedules.find(item => item.id === scheduleId);
-        if (!schedule) return;
-
-        selectedTaximeterScheduleId = scheduleId;
-        currentTaximeterConfigContext = prepararContextoTaximetroViajesUrbanos(schedule);
-
-        document.querySelectorAll('[id^="taximeter-schedule-card-"]').forEach(card => {
-            card.classList.remove('card-selected', 'ring-2', 'ring-red-500');
-        });
-
-        const card = document.getElementById(`taximeter-schedule-card-${scheduleId}`);
-        if (card) card.classList.add('card-selected', 'ring-2', 'ring-red-500');
-        lucide.createIcons();
-    }
-
-    function abrirPantallaTaximetroViajesUrbanos() {
-        if (currentAdminView !== 'urban-taximeter' || !taximeterSelectedUrbanServiceId || !selectedTaximeterScheduleId) return;
-
-        const data = getTaximeterSchedulesUrbanTripsData();
-        const schedules = data[taximeterSelectedUrbanServiceId] || [];
-        const schedule = schedules.find(item => item.id === selectedTaximeterScheduleId);
-        if (!schedule) return;
-
-        currentTaximeterConfigContext = prepararContextoTaximetroViajesUrbanos(schedule);
-        currentAdminView = 'urban-taximeter-config';
-
-        const dashboard = document.getElementById('admin-dashboard');
-        const wallet = document.getElementById('admin-wallet-section');
-        const urbanTrips = document.getElementById('urban-trips-section');
-        const taximeterSection = document.getElementById('urban-taximeter-section');
-        const editBtn = document.getElementById('admin-edit-btn');
-        const taximeterScheduleBtn = document.getElementById('admin-taximeter-schedule-btn');
-        const taximeterNewBtn = document.getElementById('admin-taximeter-new-btn');
-        const taximeterConfigBtn = document.getElementById('admin-taximeter-config-btn');
-        const deleteBtnText = document.getElementById('admin-delete-btn-text');
-
-        if (dashboard) dashboard.classList.add('hidden');
-        if (wallet) wallet.classList.add('hidden');
-        if (urbanTrips) urbanTrips.classList.add('hidden');
-        if (taximeterSection) {
-            taximeterSection.classList.remove('hidden');
-            taximeterSection.innerHTML = '';
-        }
-        if (deleteBtnText) deleteBtnText.innerText = 'Borrar';
-
-        if (editBtn) {
-            editBtn.classList.add('hidden');
-            editBtn.classList.remove('inline-flex');
-        }
-        if (taximeterScheduleBtn) {
-            taximeterScheduleBtn.classList.add('hidden');
-            taximeterScheduleBtn.classList.remove('inline-flex');
-        }
-        if (taximeterNewBtn) {
-            taximeterNewBtn.classList.remove('hidden');
-            taximeterNewBtn.classList.add('inline-flex');
-        }
-        if (taximeterConfigBtn) {
-            taximeterConfigBtn.classList.add('hidden');
-            taximeterConfigBtn.classList.remove('inline-flex');
-        }
-
-        document.getElementById('admin-title').innerHTML = 'TAXÍMETRO <span class="text-red-600 text-lg">URBANO</span>';
-        renderPantallaConfiguracionTaximetroUrbano(false);
-        updateTaximeterRealtimeStatus();
-        lucide.createIcons();
-    }
-
-    function guardarHorarioTaximetroViajesUrbanos() {
-        if (currentAdminView !== 'urban-taximeter' || !taximeterSelectedUrbanServiceId) return;
-
-        const nameInput = document.getElementById('taximeter-schedule-name');
-        const startInput = document.getElementById('taximeter-schedule-start');
-        const endInput = document.getElementById('taximeter-schedule-end');
-        const nombre = nameInput ? nameInput.value.trim() : '';
-        const desde = startInput ? startInput.value : '';
-        const hasta = endInput ? endInput.value : '';
-
-        if (!nombre || !desde || !hasta) {
-            alert('Completa el nombre del horario, hora de inicio y hora final.');
-            return;
-        }
-
-        const data = getTaximeterSchedulesUrbanTripsData();
-        const serviceId = taximeterSelectedUrbanServiceId;
-        if (!data[serviceId]) data[serviceId] = [];
-
-        data[serviceId].push({
-            id: `taximeter_${Date.now()}_${Math.random().toString(16).slice(2)}`,
-            serviceId,
-            nombre,
-            desde,
-            hasta,
-            createdAt: new Date().toISOString()
-        });
-
-        saveTaximeterSchedulesUrbanTripsData(data);
-        selectedTaximeterScheduleId = null;
-        currentTaximeterConfigContext = null;
-        renderHorariosTaximetroViajesUrbanos(false);
-        updateTaximeterRealtimeStatus();
-    }
-
-    function eliminarHorarioTaximetroViajesUrbanos(scheduleId) {
-        if (!taximeterSelectedUrbanServiceId || !scheduleId) return;
-
-        const data = getTaximeterSchedulesUrbanTripsData();
-        const serviceId = taximeterSelectedUrbanServiceId;
-        data[serviceId] = (data[serviceId] || []).filter(schedule => schedule.id !== scheduleId);
-        if (selectedTaximeterScheduleId === scheduleId) {
-            selectedTaximeterScheduleId = null;
-            currentTaximeterConfigContext = null;
-            localStorage.removeItem('admin_taximetro_contexto_viajes_urbanos');
-        }
-        saveTaximeterSchedulesUrbanTripsData(data);
-        renderHorariosTaximetroViajesUrbanos(false);
-        updateTaximeterRealtimeStatus();
-    }
-
-    function updateTaximeterRealtimeStatus() {
-        const allData = getTaximeterSchedulesUrbanTripsData();
-        const realtimeState = {};
-
-        Object.keys(allData).forEach(serviceId => {
-            const schedules = allData[serviceId] || [];
-            realtimeState[serviceId] = {
-                active: schedules.some(schedule => isNowInsideTaximeterSchedule(schedule)),
-                updatedAt: new Date().toISOString()
-            };
-        });
-
-        localStorage.setItem('admin_estado_taximetro_viajes_urbanos', JSON.stringify(realtimeState));
-
-        if (currentTaximeterConfigContext && currentTaximeterConfigContext.serviceId && currentTaximeterConfigContext.scheduleId) {
-            const schedules = (allData[currentTaximeterConfigContext.serviceId] || []);
-            const linkedSchedule = schedules.find(schedule => schedule.id === currentTaximeterConfigContext.scheduleId);
-            if (linkedSchedule) {
-                currentTaximeterConfigContext.active = isNowInsideTaximeterSchedule(linkedSchedule);
-                currentTaximeterConfigContext.updatedAt = new Date().toISOString();
-                localStorage.setItem('admin_taximetro_contexto_viajes_urbanos', JSON.stringify(currentTaximeterConfigContext));
-            }
-        }
-
-        if ((currentAdminView === 'urban-taximeter' || currentAdminView === 'urban-taximeter-config') && taximeterSelectedUrbanServiceId) {
-            const clock = document.getElementById('taximeter-realtime-clock');
-            const statusBadge = document.getElementById('taximeter-realtime-status');
-            const status = getTaximeterServiceRealtimeStatus(taximeterSelectedUrbanServiceId);
-
-            if (clock) clock.innerText = new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-            if (statusBadge) {
-                statusBadge.innerText = status.active ? 'Activado' : 'Desactivado';
-                statusBadge.className = `inline-flex mt-1 px-3 py-1 rounded-full text-[8px] font-black uppercase italic ${status.active ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-red-600/20 text-red-400 border border-red-600/30'}`;
-            }
-        }
-    }
-
-    function abrirHorariosTaximetroViajesUrbanos() {
-        if (currentAdminView !== 'urban-trips' || !selectedUrbanServiceId) return;
-
-        taximeterSelectedUrbanServiceId = selectedUrbanServiceId;
-        currentAdminView = 'urban-taximeter';
-
-        const dashboard = document.getElementById('admin-dashboard');
-        const wallet = document.getElementById('admin-wallet-section');
-        const urbanTrips = document.getElementById('urban-trips-section');
-        const taximeterSection = document.getElementById('urban-taximeter-section');
-        const deleteBtnText = document.getElementById('admin-delete-btn-text');
-        const editBtn = document.getElementById('admin-edit-btn');
-        const taximeterScheduleBtn = document.getElementById('admin-taximeter-schedule-btn');
-        const taximeterNewBtn = document.getElementById('admin-taximeter-new-btn');
-        const taximeterConfigBtn = document.getElementById('admin-taximeter-config-btn');
-
-        if (dashboard) dashboard.classList.add('hidden');
-        if (wallet) wallet.classList.add('hidden');
-        if (urbanTrips) urbanTrips.classList.add('hidden');
-        if (taximeterSection) taximeterSection.classList.remove('hidden');
-
-        if (deleteBtnText) deleteBtnText.innerText = 'Borrar';
-
-        if (editBtn) {
-            editBtn.classList.remove('hidden');
-            editBtn.classList.add('inline-flex');
-        }
-
-        if (taximeterScheduleBtn) {
-            taximeterScheduleBtn.classList.add('hidden');
-            taximeterScheduleBtn.classList.remove('inline-flex');
-        }
-
-        if (taximeterNewBtn) {
-            taximeterNewBtn.classList.remove('hidden');
-            taximeterNewBtn.classList.add('inline-flex');
-        }
-
-        if (taximeterConfigBtn) {
-            taximeterConfigBtn.classList.remove('hidden');
-            taximeterConfigBtn.classList.add('inline-flex');
-        }
-
-        selectedTaximeterScheduleId = null;
-        currentTaximeterConfigContext = null;
-
-        document.getElementById('admin-title').innerHTML = 'HORARIOS <span class="text-red-600 text-lg">TAXÍMETRO</span>';
-        cancelarEdicionServicioUrbano();
-        renderHorariosTaximetroViajesUrbanos(false);
-        updateTaximeterRealtimeStatus();
-        lucide.createIcons();
-    }
-
-    function renderPantallaConfiguracionTaximetroUrbano(showForm = false) {
-        if (!taximeterSelectedUrbanServiceId || !selectedTaximeterScheduleId) return;
-
-        const taximeterSection = document.getElementById('urban-taximeter-section');
-        if (!taximeterSection) return;
-
-        const schedule = getUrbanTaximeterSelectedSchedule();
-        if (!schedule) {
-            taximeterSection.innerHTML = `
-                <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 text-center">
-                    <i data-lucide="alert-circle" class="w-8 h-8 text-red-600 mx-auto mb-3"></i>
-                    <p class="text-[10px] font-black text-gray-500 uppercase italic">El horario seleccionado ya no existe.</p>
-                </div>`;
-            lucide.createIcons();
-            return;
-        }
-
-        currentTaximeterConfigContext = prepararContextoTaximetroViajesUrbanos(schedule);
-        const serviceId = taximeterSelectedUrbanServiceId;
-        const scheduleId = selectedTaximeterScheduleId;
-        const serviceName = getUrbanServiceDisplayName(serviceId);
-        const config = getTaximeterUrbanConfigForContext(serviceId, scheduleId);
-        const status = getTaximeterServiceRealtimeStatus(serviceId);
-        const nowText = new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-
-        const formHtml = showForm ? `
-            <div id="taximeter-urban-config-form" class="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 mb-4">
-                <div class="flex items-center justify-between mb-3">
-                    <div>
-                        <p class="text-[8px] font-black text-gray-400 uppercase italic tracking-widest">Nueva configuración</p>
-                        <h3 class="text-sm font-black italic uppercase text-gray-900">Taxímetro urbano</h3>
-                    </div>
-                    <button type="button" onclick="renderPantallaConfiguracionTaximetroUrbano(false)" class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center active:scale-95 transition-all" title="Cerrar" aria-label="Cerrar">
-                        <i data-lucide="x" class="w-4 h-4"></i>
-                    </button>
-                </div>
-
-                <div class="bg-gray-50 border border-gray-100 rounded-2xl p-3 mb-4">
-                    <p class="text-[8px] font-black text-gray-400 uppercase italic">Enlazado a</p>
-                    <h4 class="text-[11px] font-black uppercase italic text-gray-900 mt-1">${serviceName}</h4>
-                    <p class="text-[9px] font-black text-red-600 uppercase italic mt-1">${schedule.nombre} · ${formatTaximeterTime(schedule.desde)} - ${formatTaximeterTime(schedule.hasta)}</p>
-                </div>
-
-                <div class="space-y-4">
-                    <div>
-                        <h4 class="text-[10px] font-black text-gray-900 uppercase italic mb-3">Kilómetros</h4>
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="reg-label">Desde</label>
-                                <input type="number" id="taximeter-km-from" class="reg-input" min="0" step="0.01" placeholder="Kilómetro inicial" value="${config?.kilometros?.desde ?? 0}">
-                            </div>
-                            <div>
-                                <label class="reg-label">Hasta</label>
-                                <input type="number" id="taximeter-km-to" class="reg-input" min="0" step="0.01" placeholder="Límite máximo" value="${config?.kilometros?.hasta ?? ''}">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div>
-                        <h4 class="text-[10px] font-black text-gray-900 uppercase italic mb-3">Costos</h4>
-                        <div class="space-y-3">
-                            <div>
-                                <label class="reg-label">Precio inicial</label>
-                                <input type="number" id="taximeter-price-initial" class="reg-input" min="0" step="0.01" placeholder="Banderazo del taxímetro" value="${config?.costos?.precioInicial ?? ''}">
-                            </div>
-                            <div>
-                                <label class="reg-label">Precio por minuto</label>
-                                <input type="number" id="taximeter-price-minute" class="reg-input" min="0" step="0.01" placeholder="Costo por tráfico o tiempo transcurrido" value="${config?.costos?.precioPorMinuto ?? ''}">
-                            </div>
-                            <div>
-                                <label class="reg-label">Precio por kilómetro</label>
-                                <input type="number" id="taximeter-price-km" class="reg-input" min="0" step="0.01" placeholder="Costo según distancia recorrida" value="${config?.costos?.precioPorKilometro ?? ''}">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-3 pt-1">
-                        <button type="button" onclick="renderPantallaConfiguracionTaximetroUrbano(false)" class="bg-gray-200 text-gray-700 py-3 rounded-xl font-black text-[10px] uppercase italic active:scale-95 transition-all">Cancelar</button>
-                        <button type="button" onclick="guardarConfiguracionTaximetroUrbano()" class="bg-red-600 text-white py-3 rounded-xl font-black text-[10px] uppercase italic active:scale-95 transition-all">Guardar</button>
-                    </div>
-                </div>
-            </div>` : '';
-
-        const savedConfigHtml = config ? `
-            <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
-                <div class="flex items-center justify-between mb-3">
-                    <div>
-                        <p class="text-[8px] font-black text-gray-400 uppercase italic tracking-widest">Configuración guardada</p>
-                        <h3 class="text-sm font-black italic uppercase text-gray-900">${serviceName}</h3>
-                    </div>
-                    <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase italic bg-green-50 text-green-700 border border-green-100">Activa</span>
-                </div>
-                <div class="grid grid-cols-2 gap-3 mb-3">
-                    <div class="bg-gray-50 rounded-2xl p-3 border border-gray-100">
-                        <p class="text-[8px] font-black text-gray-400 uppercase italic">Desde</p>
-                        <h4 class="text-[12px] font-black uppercase italic text-gray-900">Km ${config.kilometros.desde}</h4>
-                    </div>
-                    <div class="bg-gray-50 rounded-2xl p-3 border border-gray-100 text-right">
-                        <p class="text-[8px] font-black text-gray-400 uppercase italic">Hasta</p>
-                        <h4 class="text-[12px] font-black uppercase italic text-gray-900">Km ${config.kilometros.hasta}</h4>
-                    </div>
-                </div>
-                <div class="grid grid-cols-3 gap-2">
-                    <div class="bg-gray-900 text-white rounded-2xl p-3">
-                        <p class="text-[8px] font-black text-gray-500 uppercase italic">Inicial</p>
-                        <h4 class="text-[11px] font-black uppercase italic">$${Number(config.costos.precioInicial).toFixed(2)}</h4>
-                    </div>
-                    <div class="bg-gray-900 text-white rounded-2xl p-3">
-                        <p class="text-[8px] font-black text-gray-500 uppercase italic">Minuto</p>
-                        <h4 class="text-[11px] font-black uppercase italic">$${Number(config.costos.precioPorMinuto).toFixed(2)}</h4>
-                    </div>
-                    <div class="bg-gray-900 text-white rounded-2xl p-3">
-                        <p class="text-[8px] font-black text-gray-500 uppercase italic">Kilómetro</p>
-                        <h4 class="text-[11px] font-black uppercase italic">$${Number(config.costos.precioPorKilometro).toFixed(2)}</h4>
-                    </div>
-                </div>
-            </div>` : `
-            <div class="bg-white rounded-2xl border border-dashed border-gray-300 p-6 text-center">
-                <i data-lucide="plus-circle" class="w-7 h-7 text-gray-300 mx-auto mb-3"></i>
-                <p class="text-[10px] font-black text-gray-400 uppercase italic">Sin configuración de costos para este horario</p>
-                <p class="text-[9px] font-bold text-gray-400 uppercase italic mt-2">Pulsa el botón Nuevo de la barra superior.</p>
-            </div>`;
-
-        taximeterSection.innerHTML = `
-            <div class="mb-4 bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
-                <p class="text-[8px] font-black text-gray-400 uppercase italic tracking-widest">Panel de Control / Servicios / Viajes urbanos</p>
-                <h3 class="text-lg font-black italic uppercase text-gray-900 leading-none mt-1">Taxímetro <span class="text-red-600">Urbano</span></h3>
-                <p class="text-[9px] font-bold text-gray-400 uppercase italic mt-2">Servicio: <span class="text-gray-900">${serviceName}</span></p>
-                <p class="text-[9px] font-bold text-gray-400 uppercase italic mt-1">Horario: <span class="text-gray-900">${schedule.nombre}</span> · ${formatTaximeterTime(schedule.desde)} - ${formatTaximeterTime(schedule.hasta)}</p>
-            </div>
-
-            <div class="bg-gray-900 text-white rounded-2xl p-4 mb-4 flex items-center justify-between gap-3">
-                <div>
-                    <p class="text-[8px] font-black text-gray-500 uppercase italic tracking-widest">Sincronizado con hora real</p>
-                    <h4 id="taximeter-realtime-clock" class="text-sm font-black italic uppercase">${nowText}</h4>
-                </div>
-                <div class="text-right">
-                    <p class="text-[8px] font-black text-gray-500 uppercase italic">Taxímetro</p>
-                    <span id="taximeter-realtime-status" class="inline-flex mt-1 px-3 py-1 rounded-full text-[8px] font-black uppercase italic ${status.active ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-red-600/20 text-red-400 border border-red-600/30'}">${status.active ? 'Activado' : 'Desactivado'}</span>
-                </div>
-            </div>
-
-            ${formHtml}
-
-            <div class="space-y-3 pb-10">
-                ${savedConfigHtml}
-            </div>`;
-
-        lucide.createIcons();
-    }
-
-    function guardarConfiguracionTaximetroUrbano() {
-        if (currentAdminView !== 'urban-taximeter-config' || !taximeterSelectedUrbanServiceId || !selectedTaximeterScheduleId) return;
-
-        const schedule = getUrbanTaximeterSelectedSchedule();
-        if (!schedule) {
-            alert('Selecciona un horario válido antes de guardar la configuración.');
-            return;
-        }
-
-        const kmFrom = Number(document.getElementById('taximeter-km-from')?.value || 0);
-        const kmTo = Number(document.getElementById('taximeter-km-to')?.value || 0);
-        const priceInitial = Number(document.getElementById('taximeter-price-initial')?.value || 0);
-        const priceMinute = Number(document.getElementById('taximeter-price-minute')?.value || 0);
-        const priceKm = Number(document.getElementById('taximeter-price-km')?.value || 0);
-
-        if (kmTo <= kmFrom) {
-            alert('El límite máximo de kilómetros debe ser mayor al kilómetro inicial.');
-            return;
-        }
-
-        if (priceInitial <= 0 || priceMinute < 0 || priceKm <= 0) {
-            alert('Completa correctamente los costos del taxímetro.');
-            return;
-        }
-
-        const config = {
-            serviceId: taximeterSelectedUrbanServiceId,
-            serviceName: getUrbanServiceDisplayName(taximeterSelectedUrbanServiceId),
-            scheduleId: selectedTaximeterScheduleId,
-            scheduleName: schedule.nombre,
-            horario: {
-                desde: schedule.desde,
-                hasta: schedule.hasta
-            },
-            kilometros: {
-                desde: kmFrom,
-                hasta: kmTo
-            },
-            costos: {
-                precioInicial: priceInitial,
-                precioPorMinuto: priceMinute,
-                precioPorKilometro: priceKm
-            },
-            updatedAt: new Date().toISOString()
-        };
-
-        setTaximeterUrbanConfigForContext(taximeterSelectedUrbanServiceId, selectedTaximeterScheduleId, config);
-        currentTaximeterConfigContext = prepararContextoTaximetroViajesUrbanos(schedule);
-        renderPantallaConfiguracionTaximetroUrbano(false);
-        updateTaximeterRealtimeStatus();
-    }
-
-    function nuevoHorarioTaximetroViajesUrbanos() {
-        if (!taximeterSelectedUrbanServiceId) return;
-        if (currentAdminView === 'urban-taximeter') {
-            renderHorariosTaximetroViajesUrbanos(true);
-            return;
-        }
-        if (currentAdminView === 'urban-taximeter-config') {
-            renderPantallaConfiguracionTaximetroUrbano(true);
-        }
-    }
-
-    if (!window.taximeterUrbanTripsRealtimeInterval) {
-        window.taximeterUrbanTripsRealtimeInterval = setInterval(updateTaximeterRealtimeStatus, 1000);
-    }
 
     function renderAdminPassengers() {
-        currentAdminView = 'passengers';
+        window.currentAdminView = 'passengers';
         selectedIds = [];
         resetAdminTopDeleteButton();
         const urbanTrips = document.getElementById('urban-trips-section');
@@ -2353,7 +1652,7 @@
     }
 
     function renderAdminRequests() {
-        currentAdminView = 'requests';
+        window.currentAdminView = 'requests';
         selectedIds = [];
         resetAdminTopDeleteButton();
         const urbanTrips = document.getElementById('urban-trips-section');
@@ -2404,16 +1703,16 @@
     }
 
     function eliminarSeleccionados() {
-        if (currentAdminView === 'urban-trips') {
+        if (window.currentAdminView === 'urban-trips') {
             eliminarServicioUrbanoSeleccionado();
             return;
         }
-        if (currentAdminView === 'urban-taximeter') return;
+        if (window.currentAdminView === 'urban-taximeter') return;
         if (selectedIds.length === 0) { alert("Selecciona registros para eliminar"); return; }
 
         const idsToDelete = selectedIds.map(String);
         let db = getUsersDb();
-        const roleToDelete = currentAdminView === 'passengers' ? 'pasajero' : 'conductor';
+        const roleToDelete = window.currentAdminView === 'passengers' ? 'pasajero' : 'conductor';
 
         const deletedUsers = db.filter(user => user.role === roleToDelete && idsToDelete.includes(String(user.id)));
         db = db.filter(user => !(user.role === roleToDelete && idsToDelete.includes(String(user.id))));
@@ -2423,7 +1722,7 @@
         localStorage.removeItem('driver_requests');
 
         selectedIds = [];
-        if (currentAdminView === 'passengers') renderAdminPassengers();
+        if (window.currentAdminView === 'passengers') renderAdminPassengers();
         else renderAdminRequests();
         alert("Registros eliminados.");
     }
@@ -2431,7 +1730,7 @@
     let userTargetAdmin = null;
     function openAdminWallet() { 
         closeAll();
-        currentAdminView = 'wallet';
+        window.currentAdminView = 'wallet';
         selectedIds = [];
         resetAdminTopDeleteButton();
         const urbanTrips = document.getElementById('urban-trips-section');
@@ -2527,8 +1826,8 @@
 
     function getCurrentTripFinalCost() {
         refreshPassengerServicePricesAndEta();
-        selectPassengerUrbanService(appState.selectedServiceId || 'taxi-expres', true);
-        return Number(appState.precioViaje || calculatePassengerFinalPrice(appState.selectedServiceId || 'taxi-expres') || 0);
+        selectPassengerUrbanService(window.appState.selectedServiceId || 'taxi-expres', true);
+        return Number(window.appState.precioViaje || calculatePassengerFinalPrice(window.appState.selectedServiceId || 'taxi-expres') || 0);
     }
 
     function canPassengerUseWalletForTrip(cost) {
@@ -2537,7 +1836,7 @@
             alert('Saldo negativo. Recarga para continuar.');
             return false;
         }
-        if (appState.selectedPayment === 'cartera' && wallet.saldo < cost) {
+        if (window.appState.selectedPayment === 'cartera' && wallet.saldo < cost) {
             alert('Saldo insuficiente.');
             return false;
         }
@@ -2550,30 +1849,30 @@
         if (!finalCost || finalCost <= 0) { alert('Este servicio no tiene un horario/tarifa activa configurada para este momento.'); return; }
         if (!canPassengerUseWalletForTrip(finalCost)) return;
 
-        appState.precioViaje = finalCost;
-        appState.pendingTrip = {
+        window.appState.precioViaje = finalCost;
+        window.appState.pendingTrip = {
             passengerId: currentUser.id,
             passengerName: currentUser.name || currentUser.nombre || 'Pasajero',
             passengerPhoto: getUserPhotoSource(currentUser),
             passengerRating: currentUser.rating || currentUser.calificacion || '5.0',
             passengerTrips: getWalletData(currentUser.id).trips || 0,
-            passengerLocation: appState.passengerLocation || null,
-            pickupAddress: appState.passengerAddress || 'Ubicación actual del pasajero',
-            destinationAddress: appState.destinationAddress || 'Destino del pasajero',
-            destinationLocation: appState.destinationLocation || null,
-            serviceId: appState.selectedServiceId,
-            paymentMethod: appState.selectedPayment,
+            passengerLocation: window.appState.passengerLocation || null,
+            pickupAddress: window.appState.passengerAddress || 'Ubicación actual del pasajero',
+            destinationAddress: window.appState.destinationAddress || 'Destino del pasajero',
+            destinationLocation: window.appState.destinationLocation || null,
+            serviceId: window.appState.selectedServiceId,
+            paymentMethod: window.appState.selectedPayment,
             finalCost,
-            distanceKm: Number(appState.routeDistanceKm || 0),
-            durationMinutes: Number(appState.routeDurationMinutes || 0),
-            routeSummary: appState.routeSummary || '',
+            distanceKm: Number(window.appState.routeDistanceKm || 0),
+            durationMinutes: Number(window.appState.routeDurationMinutes || 0),
+            routeSummary: window.appState.routeSummary || '',
             createdAt: new Date().toISOString(),
             charged: false
         };
         refreshWalletViews(currentUser.id);
         startRadar();
 
-        const created = await publishPassengerTripRequest(appState.pendingTrip);
+        const created = await publishPassengerTripRequest(window.appState.pendingTrip);
         if (!created) return;
     }
 
@@ -2625,14 +1924,14 @@
             pasajeroFoto: trip.passengerPhoto || getUserPhotoSource(currentUser),
             pasajeroCalificacion: trip.passengerRating || currentUser.rating || currentUser.calificacion || '5.0',
             pasajeroViajes: Number(trip.passengerTrips || getWalletData(currentUser.id).trips || 0),
-            origen: trip.pickupAddress || appState.passengerAddress || 'Ubicación actual del pasajero',
-            destino: trip.destinationAddress || appState.destinationAddress || 'Destino del pasajero',
-            metodoPago: trip.paymentMethod || appState.selectedPayment,
-            distanciaKm: Number(trip.distanceKm || appState.routeDistanceKm || 0),
-            costo: Number(trip.finalCost || appState.precioViaje || 0)
+            origen: trip.pickupAddress || window.appState.passengerAddress || 'Ubicación actual del pasajero',
+            destino: trip.destinationAddress || window.appState.destinationAddress || 'Destino del pasajero',
+            metodoPago: trip.paymentMethod || window.appState.selectedPayment,
+            distanciaKm: Number(trip.distanceKm || window.appState.routeDistanceKm || 0),
+            costo: Number(trip.finalCost || window.appState.precioViaje || 0)
         }).then(createdTrip => {
             const tripId = createdTrip.id || createdTrip.viajeId;
-            appState.pendingTrip = { ...appState.pendingTrip, requestId: tripId, viajeId: tripId, id: tripId };
+            window.appState.pendingTrip = { ...appState.pendingTrip, requestId: tripId, viajeId: tripId, id: tripId };
             startPassengerPendingRequestWatcher();
             return createdTrip;
         }).catch(error => {
@@ -2698,7 +1997,7 @@
         if (!request || !isAvailable) {
             container.classList.add('hidden');
             container.innerHTML = '';
-            if (mainMsg && activePanel === 'driver') mainMsg.innerText = isAvailable ? 'Buscando viajes cercanos' : 'Actívate para recibir viajes';
+            if (mainMsg && window.activePanel === 'driver') mainMsg.innerText = isAvailable ? 'Buscando viajes cercanos' : 'Actívate para recibir viajes';
             return;
         }
 
@@ -2822,12 +2121,12 @@
     }
 
     function getAcceptedDriverForPassengerRequest() {
-        const trip = appState.pendingTrip || {};
+        const trip = window.appState.pendingTrip || {};
         return trip.driver || null;
     }
 
     function startPassengerPendingRequestWatcher() {
-        const requestId = appState.pendingTrip?.requestId || appState.pendingTrip?.viajeId || appState.pendingTrip?.id;
+        const requestId = window.appState.pendingTrip?.requestId || window.appState.pendingTrip?.viajeId || window.appState.pendingTrip?.id;
         if (!requestId) return;
         stopPassengerPendingRequestWatcher();
         const firebaseApi = window.DriveMXFirebase;
@@ -2835,7 +2134,7 @@
         passengerTripUnsubscribe = firebaseApi.listenTripById(requestId, tripDoc => {
             const trip = normalizeFirestoreTrip(tripDoc || {});
             if (!trip || !trip.id) return;
-            appState.pendingTrip = { ...appState.pendingTrip, ...trip, requestId: trip.id, viajeId: trip.id };
+            window.appState.pendingTrip = { ...appState.pendingTrip, ...trip, requestId: trip.id, viajeId: trip.id };
             if (trip.status === 'accepted' && trip.driver) {
                 stopPassengerPendingRequestWatcher();
                 acceptDriverOffer(trip.driver);
@@ -2844,10 +2143,10 @@
     }
 
     function applyAutomaticTripWalletDiscount(tripData = null) {
-        const trip = tripData || appState.pendingTrip || {};
+        const trip = tripData || window.appState.pendingTrip || {};
         const passengerId = trip.passengerId || (currentUser && currentUser.id);
-        const finalCost = Number(trip.finalCost || appState.precioViaje || 0);
-        const paymentMethod = trip.paymentMethod || appState.selectedPayment;
+        const finalCost = Number(trip.finalCost || window.appState.precioViaje || 0);
+        const paymentMethod = trip.paymentMethod || window.appState.selectedPayment;
 
         if (!passengerId || !finalCost || finalCost <= 0) return getWalletData(passengerId);
 
@@ -2855,10 +2154,10 @@
         if (paymentMethod === 'cartera') {
             wallet = addMovement(passengerId, 'restar', finalCost, 'Pago automático de viaje', {
                 origen: 'viaje_finalizado',
-                serviceId: trip.serviceId || appState.selectedServiceId,
-                distanciaKm: Number(trip.distanceKm || appState.routeDistanceKm || 0),
-                tiempoMinutos: Number(trip.durationMinutes || appState.routeDurationMinutes || 0),
-                ruta: trip.routeSummary || appState.routeSummary || ''
+                serviceId: trip.serviceId || window.appState.selectedServiceId,
+                distanciaKm: Number(trip.distanceKm || window.appState.routeDistanceKm || 0),
+                tiempoMinutos: Number(trip.durationMinutes || window.appState.routeDurationMinutes || 0),
+                ruta: trip.routeSummary || window.appState.routeSummary || ''
             });
         }
 
@@ -2870,10 +2169,10 @@
 
     function finalizePassengerTrip() {
         if (!currentUser || currentUser.role !== 'pasajero') return;
-        if (appState.pendingTrip && appState.pendingTrip.charged) return;
+        if (window.appState.pendingTrip && window.appState.pendingTrip.charged) return;
 
-        applyAutomaticTripWalletDiscount(appState.pendingTrip);
-        if (appState.pendingTrip) appState.pendingTrip.charged = true;
+        applyAutomaticTripWalletDiscount(window.appState.pendingTrip);
+        if (window.appState.pendingTrip) window.appState.pendingTrip.charged = true;
 
         clearActiveTripDriverTracking();
         clearActiveTripDriverTracking();
@@ -2967,7 +2266,7 @@
     }
 
     function renderAvailableDrivers() {
-        activePanel = 'passenger-offers';
+        window.activePanel = 'passenger-offers';
         const container = document.getElementById('driver-cards-container');
         container.innerHTML = '';
         updatePassengerLocationForEta(() => {
@@ -3037,12 +2336,12 @@
     }
 
     function acceptDriverOffer(driver) {
-        activePanel = 'passenger-trip';
+        window.activePanel = 'passenger-trip';
         activeTripData = driver;
-        if (appState.pendingTrip) {
-            appState.pendingTrip.driverId = driver.id || '';
-            appState.pendingTrip.driverName = driver.name || 'Conductor';
-            appState.pendingTrip.acceptedAt = new Date().toISOString();
+        if (window.appState.pendingTrip) {
+            window.appState.pendingTrip.driverId = driver.id || '';
+            window.appState.pendingTrip.driverName = driver.name || 'Conductor';
+            window.appState.pendingTrip.acceptedAt = new Date().toISOString();
         }
         removeDuplicatedPassengerServicesSections();
         const costSheet = document.getElementById('cost-sheet');
@@ -3076,10 +2375,10 @@
         document.getElementById('trip-driver-name').innerText = driver.name || 'Conductor';
         document.getElementById('trip-driver-vehicle').innerText = `${driver.color || 'Color'} • ${brand} ${model}`;
         document.getElementById('trip-driver-plate').innerText = `Placa: ${driver.plate || 'N/A'}`;
-        document.getElementById('trip-payment-method').innerText = getPaymentLabel(appState.selectedPayment);
-        document.getElementById('trip-cost').innerText = `$${appState.precioViaje.toFixed(2)} MXN`;
-        document.getElementById('trip-pickup').innerText = appState.passengerAddress || 'Ubicación actual del pasajero';
-        document.getElementById('trip-destination').innerText = appState.destinationAddress || 'Destino del pasajero';
+        document.getElementById('trip-payment-method').innerText = getPaymentLabel(window.appState.selectedPayment);
+        document.getElementById('trip-cost').innerText = `$${window.appState.precioViaje.toFixed(2)} MXN`;
+        document.getElementById('trip-pickup').innerText = window.appState.passengerAddress || 'Ubicación actual del pasajero';
+        document.getElementById('trip-destination').innerText = window.appState.destinationAddress || 'Destino del pasajero';
 
         const photo = document.getElementById('trip-driver-photo');
         const fallback = document.getElementById('trip-driver-fallback');
@@ -3140,7 +2439,7 @@
     }
 
     function callActiveDriver() {
-        if (activePanel !== 'passenger-trip') return;
+        if (window.activePanel !== 'passenger-trip') return;
         const phone = getActiveDriverPhone();
         if (!phone) {
             alert('Este conductor no tiene número registrado.');
@@ -3150,7 +2449,7 @@
     }
 
     function openPassengerMessageModal() {
-        if (activePanel !== 'passenger-trip') return;
+        if (window.activePanel !== 'passenger-trip') return;
         const modal = document.getElementById('passenger-message-modal');
         const input = document.getElementById('passenger-driver-message');
         const status = document.getElementById('passenger-message-status');
@@ -3167,7 +2466,7 @@
     }
 
     function sendPassengerMessageToDriver() {
-        if (activePanel !== 'passenger-trip') return;
+        if (window.activePanel !== 'passenger-trip') return;
         const input = document.getElementById('passenger-driver-message');
         const status = document.getElementById('passenger-message-status');
         const text = (input?.value || '').trim();
@@ -3279,12 +2578,12 @@
     }
 
     function updateActiveTripDriverTracking() {
-        if (activePanel !== 'passenger-trip' || !activeTripData) return;
-        if (!appState.passengerLocation) {
+        if (window.activePanel !== 'passenger-trip' || !activeTripData) return;
+        if (!window.appState.passengerLocation) {
             const storedPassenger = JSON.parse(localStorage.getItem('drive_mx_passenger_location') || 'null');
-            if (storedPassenger && storedPassenger.lat && storedPassenger.lng) appState.passengerLocation = { lat: storedPassenger.lat, lng: storedPassenger.lng };
+            if (storedPassenger && storedPassenger.lat && storedPassenger.lng) window.appState.passengerLocation = { lat: storedPassenger.lat, lng: storedPassenger.lng };
         }
-        const pickupPosition = appState.passengerLocation;
+        const pickupPosition = window.appState.passengerLocation;
         if (!pickupPosition) return;
 
         let liveDriverPosition = getStoredDriverLiveLocation(activeTripData);
@@ -3298,14 +2597,14 @@
             const pickupLatLng = new google.maps.LatLng(pickupPosition.lat, pickupPosition.lng);
             activeTripDriverMarker.setPosition(driverLatLng);
             if (passengerMapMarker) passengerMapMarker.setPosition(pickupLatLng);
-            if (passengerDirectionsService && activeTripDirectionsRenderer) {
-                passengerDirectionsService.route({
+            if (window.passengerDirectionsService && activeTripDirectionsRenderer) {
+                window.passengerDirectionsService.route({
                     origin: driverLatLng,
                     destination: pickupLatLng,
                     travelMode: google.maps.TravelMode.DRIVING,
                     drivingOptions: { departureTime: new Date(), trafficModel: google.maps.TrafficModel.BEST_GUESS }
                 }, (result, status) => {
-                    if (activePanel !== 'passenger-trip' || !activeTripDirectionsRenderer) return;
+                    if (window.activePanel !== 'passenger-trip' || !activeTripDirectionsRenderer) return;
                     if (status === 'OK') activeTripDirectionsRenderer.setDirections(result);
                 });
             }
@@ -3368,7 +2667,7 @@
     }
 
     function notifyPassengerIsLeaving() {
-        if (activePanel !== 'passenger-trip' || !activeTripData) return;
+        if (window.activePanel !== 'passenger-trip' || !activeTripData) return;
         const driver = activeTripData || {};
         const messages = JSON.parse(localStorage.getItem('drive_mx_trip_messages') || '[]');
         messages.unshift({
@@ -3413,7 +2712,7 @@
 
     function shareTripWhatsApp() {
         const driver = activeTripData || {};
-        const msg = `Estoy en un viaje de Drive MX. Conductor: ${driver.name || 'Conductor'}, vehículo: ${driver.color || ''} ${driver.vehicle || ''}, placa: ${driver.plate || 'N/A'}. Recogida: ${appState.passengerAddress || 'Ubicación actual del pasajero'}. Destino: ${appState.destinationAddress || 'Destino del pasajero'}.`;
+        const msg = `Estoy en un viaje de Drive MX. Conductor: ${driver.name || 'Conductor'}, vehículo: ${driver.color || ''} ${driver.vehicle || ''}, placa: ${driver.plate || 'N/A'}. Recogida: ${window.appState.passengerAddress || 'Ubicación actual del pasajero'}. Destino: ${window.appState.destinationAddress || 'Destino del pasajero'}.`;
         window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
     }
 
@@ -3428,7 +2727,7 @@
 
     function openMenu() {
 
-        if(activePanel === 'driver') {
+        if(window.activePanel === 'driver') {
             openDriverSidebar();
             return;
         }
@@ -3446,7 +2745,7 @@
     }
     function toggleAccordion(id) { document.getElementById(id).classList.toggle('expanded'); }
     function openCosts() {
-        if (!appState.destinationLocation) {
+        if (!window.appState.destinationLocation) {
             hidePassengerCostsDuringDestinationSearch();
             return;
         }
@@ -3534,11 +2833,11 @@
     } else {
         initPassengerCostSheetDrag();
     }
-    function setPay(btn, method) { document.querySelectorAll('.payment-opt').forEach(b => b.classList.remove('selected')); btn.classList.add('selected'); appState.selectedPayment = method; }
+    function setPay(btn, method) { document.querySelectorAll('.payment-opt').forEach(b => b.classList.remove('selected')); btn.classList.add('selected'); window.appState.selectedPayment = method; }
 
     window.addEventListener('storage', (event) => {
         if (['admin_horarios_taximetro_viajes_urbanos', 'admin_config_taximetro_viajes_urbanos', 'admin_servicios_viajes_urbanos', 'db_usuarios_permanente'].includes(event.key)) {
-            if (activePanel === 'passenger') {
+            if (window.activePanel === 'passenger') {
                 renderPassengerUrbanServices();
                 calculatePassengerRouteAndRefreshFares();
             }
@@ -3551,7 +2850,7 @@
 
     window.addEventListener('drive_mx_wallet_updated', (event) => {
         refreshWalletViews(event.detail?.userId || null);
-        if (activePanel === 'driver') updateDriverSidebarProfile();
+        if (window.activePanel === 'driver') updateDriverSidebarProfile();
     });
     
     function goToStep(n) {
@@ -3639,7 +2938,7 @@
             return;
         }
 
-        activePanel = 'registration';
+        window.activePanel = 'registration';
         registrationMode = 'driver';
         tempBase64Photo = '';
         tempIneFrontPhoto = '';
@@ -3672,8 +2971,12 @@
         lucide.createIcons();
     }
 
-    function handleDriverBack() { activePanel = null; document.getElementById('driver-registration-view').classList.add('hidden'); document.getElementById('login-screen').classList.remove('hidden'); }
+    function handleDriverBack() { window.activePanel = null; document.getElementById('driver-registration-view').classList.add('hidden'); document.getElementById('login-screen').classList.remove('hidden'); }
     window.addEventListener('drive_mx_trip_requests_updated', renderDriverTripRequestCard);
+
+
+
+
 
 
 
