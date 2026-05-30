@@ -34,6 +34,9 @@
       const app = document.getElementById('app-container');
       app.innerHTML = (await Promise.all(partials.map(loadPartial))).join('\n');
 
+      await loadClassicScript('./src/taximetro/datos-taximetro.js');
+      await loadClassicScript('./src/taximetro/horarios-taximetro.js');
+      await loadClassicScript('./src/taximetro/tarifas-taximetro.js');
       await loadClassicScript('./src/common/app.js');
       await import('./src/firebase/firebase-bridge.js');
       await import('./src/firestore/global-sync.js');
@@ -48,4 +51,5 @@
   </script>
 </body>
 </html>
+
 
